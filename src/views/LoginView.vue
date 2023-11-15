@@ -39,14 +39,31 @@
 </template>
 
 <script setup lang="ts">
+import axios from 'axios'
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
+import useSocketStore from '@/store/socketStore'
+import type { User } from '@/models/user'
 
 const router = useRouter()
+
+const socketStore = useSocketStore()
 
 const username = ref('')
 const password = ref<string>()
 
 const submitForm = async () => {
+  axios
+    .post('http://localhost:5000/users/login', {
+      password: password.value,
+      username: username.value
+    })
+    .then((response) => {
+      router.push({ path: '/' })
+      console.log(response.data)
+      localStorage.setItem('token', response.data.token)
+      socketStore.login(response.data.user as User)
+    })
+    .catch((error) => console.log(error))
 }
 </script>
