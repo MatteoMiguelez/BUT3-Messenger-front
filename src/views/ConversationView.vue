@@ -3,10 +3,15 @@ import type { Conversation } from '@/models/conversation'
 
 const props = defineProps<{
   conversation: Conversation
-  showConversation: boolean
 }>()
+
+const emit = defineEmits(['changeView'])
+
+function closeConversation() {
+  emit('changeView')
+}
 </script>
 <template>
   {{ props.conversation.participants }}
-  <button @click="1 === 1">X</button>
+  <button @click="closeConversation">X</button>
 </template>

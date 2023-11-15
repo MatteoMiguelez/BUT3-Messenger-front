@@ -44,10 +44,13 @@ import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import useSocketStore from '@/store/socketStore'
 import type { User } from '@/models/user'
+import useUserStore from '@/store/userStore'
 
 const router = useRouter()
 
 const socketStore = useSocketStore()
+
+const userStore = useUserStore()
 
 const username = ref('')
 const password = ref<string>()
@@ -60,7 +63,7 @@ const submitForm = async () => {
     })
     .then((response) => {
       router.push({ path: '/' })
-      console.log(response.data)
+      userStore.setConnectedUser(response.data.user)
       localStorage.setItem('token', response.data.token)
       socketStore.login(response.data.user as User)
     })

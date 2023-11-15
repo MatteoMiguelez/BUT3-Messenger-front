@@ -1,19 +1,32 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { onMounted, ref } from 'vue'
 import { twMerge } from 'tailwind-merge'
 import type { User } from '@/models/user'
+import UserItem from './UserItem.vue'
+import axios from 'axios'
+import type { Conversation } from '@/models/conversation'
+import useUserStore from '@/store/userStore'
 
 const selectedUsersIds = ref<Array<string>>([])
 const userList = ref<User[]>([])
 
 const emit = defineEmits(['createConv'])
 
+const userStore = useUserStore()
+
+onMounted(async () => {
+  axios.get('http://localhost:5000/users/all').then((response) => {
+    userList.value = response.data.users
+    userList.value = userList.value.filter((user) => user._id != userStore.getConnectedUser()?._id)
+  })
+})
+
 function isUserSelected(userId: string) {
   return selectedUsersIds.value.findIndex((id) => id === userId) !== -1
 }
 
-function createConversation() {
-  emit('createConv', selectedUsersIds.value)
+function createdConversation(conversation: Conversation) {
+  emit('createConv', conversation)
 }
 
 function selectUser(userId: string) {
@@ -23,7 +36,26 @@ function selectUser(userId: string) {
   } else {
     selectedUsersIds.value.push(userId)
   }
-  console.log(selectedUsersIds.value)
+}
+
+const createConversation = async () => {
+  axios
+    .post(
+      'http://localhost:5000/conversations',
+      { concernedUsersIds: selectedUsersIds.value },
+      {
+        headers: {
+          Authorization: localStorage.getItem('token')
+        }
+      }
+    )
+    .then((response) => {
+      selectedUsersIds.value = []
+      createdConversation(response.data.conversation)
+    })
+    .catch((error) => {
+      console.log('ERROR', error)
+    })
 }
 </script>
 <template>

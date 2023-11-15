@@ -9,7 +9,15 @@ const useUserStore = defineStore('userStore', () => {
     connectedUser: null
   })
 
-  return {}
+  function setConnectedUser(user: User): void {
+    state.connectedUser = user
+  }
+
+  function getConnectedUser(): User | null {
+    return state.connectedUser
+  }
+
+  return { setConnectedUser, getConnectedUser }
 })
 
 export default useUserStore

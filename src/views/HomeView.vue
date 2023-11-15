@@ -1,20 +1,18 @@
 <script setup lang="ts">
 import axios from 'axios'
 import { onMounted, ref } from 'vue'
-//import { useRouter } from 'vue-router'
-import { twMerge } from 'tailwind-merge'
-//import useSocketStore from '@/store/socketStore'
-import type { User } from '@/models/user'
 import type { Conversation } from '@/models/conversation'
 import ConversationView from './ConversationView.vue'
-import UserItem from './UserItem.vue'
 import ConversationItemView from './ConversationItemView.vue'
+import UserListView from './UserListView.vue'
+import useUserStore from '@/store/userStore'
 
 //const router = useRouter()
 
 //const socketStore = useSocketStore()
 
-const userList = ref<User[]>([])
+const userStore = useUserStore()
+
 const conversationList = ref<Conversation[]>([])
 const selectedConversation = ref()
 const showConversation = ref(false)
@@ -22,11 +20,6 @@ const showConversation = ref(false)
 onMounted(async () => {
   //socketStore.watchNewUser((user: User) => console.log('NEW USER', user))
   // fetch users
-  axios.get('http://localhost:5000/users/all').then((response) => {
-    userList.value = response.data.users
-    console.log(response.data)
-  })
-  // fetch conversations
 
   axios
     .get('http://localhost:5000/conversations', {
@@ -39,45 +32,17 @@ onMounted(async () => {
     })
 })
 
-const selectedUsersIds = ref<Array<string>>([])
-
-function selectUser(userId: string) {
-  const index = selectedUsersIds.value.findIndex((id) => id === userId)
-  if (index !== -1) {
-    selectedUsersIds.value.splice(index, 1)
-  } else {
-    selectedUsersIds.value.push(userId)
-  }
-  console.log(selectedUsersIds.value)
-}
-
-function isUserSelected(userId: string) {
-  return selectedUsersIds.value.findIndex((id) => id === userId) !== -1
-}
-
-const createConversation = async () => {
-  axios
-    .post(
-      'http://localhost:5000/conversations',
-      { concernedUsersIds: selectedUsersIds.value },
-      {
-        headers: {
-          Authorization: localStorage.getItem('token')
-        }
-      }
-    )
-    .then((response) => {
-      selectedUsersIds.value = []
-      conversationList.value.push(response.data.conversation)
-    })
-    .catch((error) => {
-      console.log('ERROR', error)
-    })
+function addConversationToList(conversation: Conversation) {
+  conversationList.value.push(conversation)
 }
 
 function openConversation(conversation: Conversation) {
   showConversation.value = true
   selectedConversation.value = conversation
+}
+
+function changeView() {
+  showConversation.value = false
 }
 </script>
 
@@ -93,7 +58,7 @@ function openConversation(conversation: Conversation) {
               class="w-12 h-12 rounded-full mr-4"
             />
             <div>
-              <h2 class="text-2xl font-bold">Nom de l'utilisateur connecté</h2>
+              <h2 class="text-2xl font-bold">{{ userStore.getConnectedUser()?.username }}</h2>
               <span class="text-green-500">Online</span>
             </div>
           </div>
@@ -106,38 +71,11 @@ function openConversation(conversation: Conversation) {
         ></ConversationItemView>
       </div>
       <div class="w-2/3 h-full px-4">
-        <template v-if="!selectedConversation">
-          <!-- v if pas de conversation selectionnee -->
-          <h2 class="font-bold text-3xl p-2">Users</h2>
-          <button
-            :disabled="!selectedUsersIds.length"
-            @click="createConversation"
-            :class="
-              twMerge(
-                'py-2 px-4 my-4 bg-blue-500 hover:bg-blue-700 text-white font-bold rounded',
-                !selectedUsersIds.length && 'bg-blue-400 cursor-not-allowed hover:bg-blue-400'
-              )
-            "
-          >
-            Create conversation
-          </button>
-          <div class="flex flew-row flex-wrap gap-2">
-            <!-- liste des utilisateurs -->
-            <UserItem
-              v-for="user in userList"
-              :key="user._id"
-              :selected="isUserSelected(user._id)"
-              :user="user"
-              @select="selectUser($event)"
-            >
-            </UserItem>
-          </div>
-        </template>
-        <!-- vue d'une conversation -->
+        <UserListView v-if="!showConversation" @createConv="addConversationToList"></UserListView>
         <ConversationView
           v-else
           :conversation="selectedConversation"
-          :show-conversation="showConversation"
+          @changeView="changeView"
         ></ConversationView>
       </div>
     </div>
