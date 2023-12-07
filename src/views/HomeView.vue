@@ -6,6 +6,7 @@ import ConversationView from './ConversationView.vue'
 import ConversationItemView from './ConversationItemView.vue'
 import UserListView from './UserListView.vue'
 import useUserStore from '@/store/userStore'
+import router from '@/router'
 
 //const router = useRouter()
 
@@ -21,6 +22,16 @@ onMounted(async () => {
   //socketStore.watchNewUser((user: User) => console.log('NEW USER', user))
   // fetch users
 
+  // Get user when
+  if (!userStore.getConnectedUser()) {
+    const user = localStorage.getItem('user')
+    if (user) {
+      const parsedUser = JSON.parse(user)
+      userStore.setConnectedUser(parsedUser)
+    } else {
+      router.push({ path: '/login' })
+    }
+  }
   axios
     .get(`http://localhost:${import.meta.env.VITE_PORT}/conversations`, {
       headers: {
