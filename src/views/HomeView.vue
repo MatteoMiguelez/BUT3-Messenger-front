@@ -22,7 +22,7 @@ onMounted(async () => {
   //socketStore.watchNewUser((user: User) => console.log('NEW USER', user))
   // fetch users
 
-  // Get user when
+  // Get user when refresh page
   if (!userStore.getConnectedUser()) {
     const user = localStorage.getItem('user')
     if (user) {
@@ -72,7 +72,7 @@ function deleteConversation(conversation: Conversation) {
         selectedConversation.value = null
       })
       .catch((error) => {
-        return
+        return error
       })
   }
 }

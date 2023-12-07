@@ -44,7 +44,7 @@
 
 <script setup lang="ts">
 import axios from 'axios'
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import useSocketStore from '@/store/socketStore'
 import type { User } from '@/models/user'
