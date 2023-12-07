@@ -22,7 +22,7 @@ onMounted(async () => {
   // fetch users
 
   axios
-    .get('http://localhost:5000/conversations', {
+    .get(`http://localhost:${import.meta.env.VITE_PORT}/conversations`, {
       headers: {
         Authorization: localStorage.getItem('token')
       }
@@ -48,7 +48,7 @@ function changeView() {
 function deleteConversation(conversation: Conversation) {
   if (localStorage.getItem('token')) {
     axios
-      .delete('http://localhost:5000/conversations/' + conversation._id, {
+      .delete(`http://localhost:${import.meta.env.VITE_PORT}/conversations/` + conversation._id, {
         headers: {
           Authorization: localStorage.getItem('token')
         }
@@ -60,7 +60,9 @@ function deleteConversation(conversation: Conversation) {
         showConversation.value = false
         selectedConversation.value = null
       })
-      .catch((error) => console.log(error))
+      .catch((error) => {
+        return
+      })
   }
 }
 </script>

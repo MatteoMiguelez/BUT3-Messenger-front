@@ -32,3 +32,5 @@ playwright-report/
 .vscode
 
 src/shims-vue.d.ts
+
+.env

@@ -40,7 +40,7 @@
 
 <script setup lang="ts">
 import axios from 'axios'
-import { ref, computed } from 'vue'
+import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import useSocketStore from '@/store/socketStore'
 import type { User } from '@/models/user'
@@ -57,7 +57,7 @@ const password = ref<string>()
 
 const submitForm = async () => {
   axios
-    .post('http://localhost:5000/users/login', {
+    .post(`http://localhost:${import.meta.env.VITE_PORT}/users/login`, {
       password: password.value,
       username: username.value
     })

@@ -31,7 +31,7 @@ const useSocketStore = defineStore('socketStore', () => {
     }
     state.currentUser = user
     if (!state.socket) {
-      state.socket = io('http://localhost:5000', {
+      state.socket = io(`http://localhost:${import.meta.env.VITE_PORT}`, {
         query: {
           userId: user._id
         },

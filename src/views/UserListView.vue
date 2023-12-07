@@ -15,7 +15,7 @@ const emit = defineEmits(['createConv'])
 const userStore = useUserStore()
 
 onMounted(async () => {
-  axios.get('http://localhost:5000/users/all').then((response) => {
+  axios.get(`http://localhost:${import.meta.env.VITE_PORT}/users/all`).then((response) => {
     userList.value = response.data.users
     userList.value = userList.value.filter((user) => user._id != userStore.getConnectedUser()?._id)
   })
@@ -41,7 +41,7 @@ function selectUser(userId: string) {
 const createConversation = async () => {
   axios
     .post(
-      'http://localhost:5000/conversations',
+      `http://localhost:${import.meta.env.VITE_PORT}/conversations`,
       { concernedUsersIds: selectedUsersIds.value },
       {
         headers: {
