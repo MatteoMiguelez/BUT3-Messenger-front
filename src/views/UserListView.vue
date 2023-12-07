@@ -6,6 +6,7 @@ import UserItem from './UserItem.vue'
 import axios from 'axios'
 import type { Conversation } from '@/models/conversation'
 import useUserStore from '@/store/userStore'
+import useConversationStore from '@/store/conversationStore'
 
 const selectedUsersIds = ref<Array<string>>([])
 const userList = ref<User[]>([])
@@ -13,6 +14,7 @@ const userList = ref<User[]>([])
 const emit = defineEmits(['createConv'])
 
 const userStore = useUserStore()
+const conversationStore = useConversationStore()
 
 onMounted(async () => {
   axios.get(`http://localhost:${import.meta.env.VITE_PORT}/users/all`).then((response) => {
@@ -39,6 +41,29 @@ function selectUser(userId: string) {
 }
 
 const createConversation = async () => {
+  // Ne crée pas de conversation si celle-ci "existe" déjà
+  const conversations = conversationStore.getConversations()
+
+  console.log('val', conversations)
+  console.log('selected', selectedUsersIds.value)
+
+  const list = conversations.filter((conversation: Conversation) => {
+    const userId = userStore.getConnectedUser()?._id
+    if (userId) {
+      const userInConvIds: string[] = selectedUsersIds.value
+      userInConvIds.push(userId)
+      console.log('userInconv', userInConvIds)
+
+      if (conversation.participants.length === userInConvIds.length) {
+        return userInConvIds.every((userId) =>
+          conversation.participants.some((participant) => participant._id === userId)
+        )
+      }
+      return false
+    }
+  })
+
+  /*
   axios
     .post(
       `http://localhost:${import.meta.env.VITE_PORT}/conversations`,
@@ -55,7 +80,7 @@ const createConversation = async () => {
     })
     .catch((error) => {
       console.log('ERROR', error)
-    })
+    })*/
 }
 </script>
 <template>

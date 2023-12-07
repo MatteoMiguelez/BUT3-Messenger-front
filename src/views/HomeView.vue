@@ -6,6 +6,7 @@ import ConversationView from './ConversationView.vue'
 import ConversationItemView from './ConversationItemView.vue'
 import UserListView from './UserListView.vue'
 import useUserStore from '@/store/userStore'
+import useConversationStore from '@/store/conversationStore'
 import router from '@/router'
 
 //const router = useRouter()
@@ -13,6 +14,7 @@ import router from '@/router'
 //const socketStore = useSocketStore()
 
 const userStore = useUserStore()
+const conversationStore = useConversationStore()
 
 const conversationList = ref<Conversation[]>([])
 const selectedConversation = ref()
@@ -40,11 +42,13 @@ onMounted(async () => {
     })
     .then((response) => {
       conversationList.value = response.data.conversations
+      conversationStore.setConversations(conversationList.value)
     })
 })
 
 function addConversationToList(conversation: Conversation) {
   conversationList.value.push(conversation)
+  openConversation(conversation)
 }
 
 function openConversation(conversation: Conversation) {
