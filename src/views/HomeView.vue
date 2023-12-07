@@ -44,6 +44,25 @@ function openConversation(conversation: Conversation) {
 function changeView() {
   showConversation.value = false
 }
+
+function deleteConversation(conversation: Conversation) {
+  if (localStorage.getItem('token')) {
+    axios
+      .delete('http://localhost:5000/conversations/' + conversation._id, {
+        headers: {
+          Authorization: localStorage.getItem('token')
+        }
+      })
+      .then((response) => {
+        conversationList.value = conversationList.value.filter(
+          (conv) => conv._id !== response.data.conversation._id
+        )
+        showConversation.value = false
+        selectedConversation.value = null
+      })
+      .catch((error) => console.log(error))
+  }
+}
 </script>
 
 <template>
@@ -76,6 +95,7 @@ function changeView() {
           v-else
           :conversation="selectedConversation"
           @changeView="changeView"
+          @deleteConv="deleteConversation"
         ></ConversationView>
       </div>
     </div>
