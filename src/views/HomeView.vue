@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import axios from 'axios'
+import axios, {AxiosResponse} from 'axios'
 import { onMounted, ref } from 'vue'
 import type { Conversation } from '@/models/conversation'
 import ConversationView from './ConversationView.vue'
@@ -16,38 +16,32 @@ import router from '@/router'
 const userStore = useUserStore()
 const conversationStore = useConversationStore()
 
-const conversationList = ref<Conversation[]>([])
 const selectedConversation = ref()
 const showConversation = ref(false)
 
 onMounted(async () => {
   //socketStore.watchNewUser((user: User) => console.log('NEW USER', user))
-  // fetch users
 
-  // Get user when refresh page
-  if (!userStore.getConnectedUser()) {
+    if (!userStore.getConnectedUser()) {
     const user = localStorage.getItem('user')
     if (user) {
-      const parsedUser = JSON.parse(user)
-      userStore.setConnectedUser(parsedUser)
+      userStore.setConnectedUser(JSON.parse(user))
     } else {
-      router.push({ path: '/login' })
+      await router.push({ path: '/login' })
     }
   }
-  axios
+  await axios
     .get(`http://localhost:${import.meta.env.VITE_PORT}/conversations`, {
       headers: {
         Authorization: localStorage.getItem('token')
       }
     })
-    .then((response) => {
-      conversationList.value = response.data.conversations
-      conversationStore.setConversations(conversationList.value)
+    .then((response : AxiosResponse) => {
+      conversationStore.setConversations(response.data.conversations)
     })
 })
 
 function addConversationToList(conversation: Conversation) {
-  conversationList.value.push(conversation)
   openConversation(conversation)
 }
 
@@ -60,24 +54,24 @@ function changeView() {
   showConversation.value = false
 }
 
-function deleteConversation(conversation: Conversation) {
+async function deleteConversation(conversation: Conversation) {
   if (localStorage.getItem('token')) {
-    axios
+    await axios
       .delete(`http://localhost:${import.meta.env.VITE_PORT}/conversations/` + conversation._id, {
         headers: {
           Authorization: localStorage.getItem('token')
         }
       })
       .then((response) => {
-        conversationList.value = conversationList.value.filter(
-          (conv) => conv._id !== response.data.conversation._id
-        )
+        conversationStore.deleteConversation(response.data.conversation._id)
         showConversation.value = false
         selectedConversation.value = null
       })
       .catch((error) => {
         return error
       })
+  } else {
+      await router.push('/login')
   }
 }
 </script>
@@ -100,14 +94,18 @@ function deleteConversation(conversation: Conversation) {
           </div>
         </div>
         <ConversationItemView
-          v-for="conversation in conversationList"
+          v-for="conversation in conversationStore.getConversations()"
           :key="conversation._id"
           :conversation="conversation"
           @openConv="openConversation($event)"
         ></ConversationItemView>
       </div>
       <div class="w-2/3 h-full px-4">
-        <UserListView v-if="!showConversation" @createConv="addConversationToList"></UserListView>
+        <UserListView
+          v-if="!showConversation"
+          @createConv="addConversationToList"
+          @existingConv="openConversation"
+        ></UserListView>
         <ConversationView
           v-else
           :conversation="selectedConversation"

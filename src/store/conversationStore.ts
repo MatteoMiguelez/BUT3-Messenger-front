@@ -1,23 +1,37 @@
 import type { Conversation } from '@/models/conversation'
 import { defineStore } from 'pinia'
-import { reactive } from 'vue'
+import { ref } from 'vue'
 
 const useConversationStore = defineStore('conversationStore', () => {
-  const state = reactive<{
-    conversations: Conversation[]
-  }>({
-    conversations: []
-  })
+  const conversationList = ref<Conversation[]>([])
 
   function setConversations(conversations: Conversation[]): void {
-    state.conversations = conversations
+    conversationList.value = conversations
+  }
+
+  function addConversation(conversation: Conversation): void {
+    conversationList.value.push(conversation)
+  }
+
+  function deleteConversation(id: string): void {
+    const index : number = conversationList.value.findIndex((conversation : Conversation) : boolean => {
+      return conversation._id === id
+    })
+    if (index !== -1) {
+      conversationList.value.splice(index, 1)
+    }
   }
 
   function getConversations(): Conversation[] {
-    return state.conversations
+    return conversationList.value
   }
 
-  return { setConversations, getConversations }
+  return {
+    setConversations,
+    getConversations,
+    addConversation,
+    deleteConversation
+  }
 })
 
 export default useConversationStore

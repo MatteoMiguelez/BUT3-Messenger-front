@@ -3,7 +3,7 @@ import { onMounted, ref } from 'vue'
 import { twMerge } from 'tailwind-merge'
 import type { User } from '@/models/user'
 import UserItem from './UserItem.vue'
-import axios from 'axios'
+import axios, {AxiosResponse} from 'axios'
 import type { Conversation } from '@/models/conversation'
 import useUserStore from '@/store/userStore'
 import useConversationStore from '@/store/conversationStore'
@@ -11,27 +11,32 @@ import useConversationStore from '@/store/conversationStore'
 const selectedUsersIds = ref<Array<string>>([])
 const userList = ref<User[]>([])
 
-const emit = defineEmits(['createConv'])
+const emit = defineEmits(['createConv', 'existingConv'])
 
 const userStore = useUserStore()
 const conversationStore = useConversationStore()
 
 onMounted(async () => {
-  axios.get(`http://localhost:${import.meta.env.VITE_PORT}/users/all`).then((response) => {
-    userList.value = response.data.users
-    userList.value = userList.value.filter((user) => user._id != userStore.getConnectedUser()?._id)
-  })
-})
+    await axios
+        .get(`http://localhost:${import.meta.env.VITE_PORT}/users/all`)
+        .then((response : AxiosResponse) => {
+            const result = response.data.users
+            if (result) {
+                userList.value = result.filter((user) => user._id != userStore.getConnectedUser()?._id)
+            }
+          })
+    }
+)
 
-function isUserSelected(userId: string) {
+function isUserSelected(userId: string): boolean {
   return selectedUsersIds.value.findIndex((id) => id === userId) !== -1
 }
 
-function createdConversation(conversation: Conversation) {
-  emit('createConv', conversation)
+function createdConversation(conversation: Conversation): void {
+  emit('existingConv', conversation)
 }
 
-function selectUser(userId: string) {
+function selectUser(userId: string): void {
   const index = selectedUsersIds.value.findIndex((id) => id === userId)
   if (index !== -1) {
     selectedUsersIds.value.splice(index, 1)
@@ -41,46 +46,52 @@ function selectUser(userId: string) {
 }
 
 const createConversation = async () => {
-  // Ne crée pas de conversation si celle-ci "existe" déjà
-  const conversations = conversationStore.getConversations()
+  const existingConversation = getExistingConversationByUsers()
 
-  console.log('val', conversations)
-  console.log('selected', selectedUsersIds.value)
-
-  const list = conversations.filter((conversation: Conversation) => {
-    const userId = userStore.getConnectedUser()?._id
-    if (userId) {
-      const userInConvIds: string[] = selectedUsersIds.value
-      userInConvIds.push(userId)
-      console.log('userInconv', userInConvIds)
-
-      if (conversation.participants.length === userInConvIds.length) {
-        return userInConvIds.every((userId) =>
-          conversation.participants.some((participant) => participant._id === userId)
-        )
-      }
-      return false
-    }
-  })
-
-  /*
-  axios
-    .post(
-      `http://localhost:${import.meta.env.VITE_PORT}/conversations`,
-      { concernedUsersIds: selectedUsersIds.value },
-      {
-        headers: {
-          Authorization: localStorage.getItem('token')
+  if (existingConversation) {
+    createdConversation(existingConversation)
+  } else {
+    await axios
+      .post(
+        `http://localhost:${import.meta.env.VITE_PORT}/conversations`,
+        { concernedUsersIds: selectedUsersIds.value },
+        {
+          headers: {
+            Authorization: localStorage.getItem('token')
+          }
         }
-      }
-    )
-    .then((response) => {
-      selectedUsersIds.value = []
-      createdConversation(response.data.conversation)
+      )
+      .then((response) => {
+        selectedUsersIds.value = []
+        conversationStore.addConversation(response.data.conversation)
+      })
+      .catch((error) => {
+        return error
+      })
+  }
+}
+
+function getExistingConversationByUsers() : Conversation | undefined {
+    const userId = userStore.getConnectedUser()?._id
+
+    let selectedIds: string[] = selectedUsersIds.value.map(String)
+    if (userId) {
+        selectedIds.push(userId)
+    }
+    selectedIds = selectedIds.sort()
+
+    return conversationStore.getConversations().find((conversation: Conversation) => {
+        if (conversation.participants.length === selectedIds.length) {
+            const participants: string[] = conversation.participants.map(String).sort()
+            for (let i = 0; i < participants.length; i++) {
+                if (participants[i] !== selectedIds[i]) {
+                    return false
+                }
+            }
+            return true
+        }
+        return false
     })
-    .catch((error) => {
-      console.log('ERROR', error)
-    })*/
 }
 </script>
 <template>
@@ -98,7 +109,6 @@ const createConversation = async () => {
     Create conversation
   </button>
   <div class="flex flew-row flex-wrap gap-2">
-    <!-- liste des utilisateurs -->
     <UserItem
       v-for="user in userList"
       :key="user._id"
