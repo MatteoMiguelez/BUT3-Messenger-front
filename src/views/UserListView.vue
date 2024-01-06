@@ -82,7 +82,7 @@ function getExistingConversationByUsers() : Conversation | undefined {
 
     return conversationStore.getConversations().find((conversation: Conversation) => {
         if (conversation.participants.length === selectedIds.length) {
-            const participants: string[] = conversation.participants.map(String).sort()
+            const participants: string[] = conversation.participants.map((conv) => conv._id)
             for (let i = 0; i < participants.length; i++) {
                 if (participants[i] !== selectedIds[i]) {
                     return false
