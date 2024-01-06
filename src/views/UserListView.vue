@@ -3,7 +3,7 @@ import { onMounted, ref } from 'vue'
 import { twMerge } from 'tailwind-merge'
 import type { User } from '@/models/user'
 import UserItem from './UserItem.vue'
-import axios, {AxiosResponse} from 'axios'
+import axios, { AxiosResponse } from 'axios'
 import type { Conversation } from '@/models/conversation'
 import useUserStore from '@/store/userStore'
 import useConversationStore from '@/store/conversationStore'
@@ -17,16 +17,15 @@ const userStore = useUserStore()
 const conversationStore = useConversationStore()
 
 onMounted(async () => {
-    await axios
-        .get(`http://localhost:${import.meta.env.VITE_PORT}/users/all`)
-        .then((response : AxiosResponse) => {
-            const result = response.data.users
-            if (result) {
-                userList.value = result.filter((user) => user._id != userStore.getConnectedUser()?._id)
-            }
-          })
-    }
-)
+  await axios
+    .get(`http://localhost:${import.meta.env.VITE_PORT}/users/all`)
+    .then((response: AxiosResponse) => {
+      const result = response.data.users
+      if (result) {
+        userList.value = result.filter((user) => user._id != userStore.getConnectedUser()?._id)
+      }
+    })
+})
 
 function isUserSelected(userId: string): boolean {
   return selectedUsersIds.value.findIndex((id) => id === userId) !== -1
@@ -71,27 +70,27 @@ const createConversation = async () => {
   }
 }
 
-function getExistingConversationByUsers() : Conversation | undefined {
-    const userId = userStore.getConnectedUser()?._id
+function getExistingConversationByUsers(): Conversation | undefined {
+  const userId = userStore.getConnectedUser()?._id
 
-    let selectedIds: string[] = selectedUsersIds.value.map(String)
-    if (userId) {
-        selectedIds.push(userId)
-    }
-    selectedIds = selectedIds.sort()
+  let selectedIds: string[] = selectedUsersIds.value.map(String)
+  if (userId) {
+    selectedIds.push(userId)
+  }
+  selectedIds = selectedIds.sort()
 
-    return conversationStore.getConversations().find((conversation: Conversation) => {
-        if (conversation.participants.length === selectedIds.length) {
-            const participants: string[] = conversation.participants.map((conv) => conv._id)
-            for (let i = 0; i < participants.length; i++) {
-                if (participants[i] !== selectedIds[i]) {
-                    return false
-                }
-            }
-            return true
+  return conversationStore.getConversations().find((conversation: Conversation) => {
+    if (conversation.participants.length === selectedIds.length) {
+      const participants: string[] = conversation.participants.map((conv) => conv._id)
+      for (let i = 0; i < participants.length; i++) {
+        if (participants[i] !== selectedIds[i]) {
+          return false
         }
-        return false
-    })
+      }
+      return true
+    }
+    return false
+  })
 }
 </script>
 <template>

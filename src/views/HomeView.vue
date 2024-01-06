@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import axios, {AxiosResponse} from 'axios'
+import axios, { AxiosResponse } from 'axios'
 import { onMounted, ref } from 'vue'
 import type { Conversation } from '@/models/conversation'
 import ConversationView from './ConversationView.vue'
@@ -22,7 +22,7 @@ const showConversation = ref(false)
 onMounted(async () => {
   //socketStore.watchNewUser((user: User) => console.log('NEW USER', user))
 
-    if (!userStore.getConnectedUser()) {
+  if (!userStore.getConnectedUser()) {
     const user = localStorage.getItem('user')
     if (user) {
       userStore.setConnectedUser(JSON.parse(user))
@@ -36,7 +36,7 @@ onMounted(async () => {
         Authorization: localStorage.getItem('token')
       }
     })
-    .then((response : AxiosResponse) => {
+    .then((response: AxiosResponse) => {
       conversationStore.setConversations(response.data.conversations)
     })
 })
@@ -71,7 +71,7 @@ async function deleteConversation(conversation: Conversation) {
         return error
       })
   } else {
-      await router.push('/login')
+    await router.push('/login')
   }
 }
 </script>
