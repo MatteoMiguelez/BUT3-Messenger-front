@@ -1,16 +1,20 @@
 <script setup lang="ts">
 import type { Conversation } from '@/models/conversation'
 import axios from 'axios'
-import { ref } from 'vue'
+import {onMounted, ref} from 'vue'
 import MessageItemVue from '@/views/Conversation/MessageItemView.vue'
+import type {Message} from "@/models/message";
 
 const props = defineProps<{
   conversation: Conversation
 }>()
 
+const messageList = ref<Message[]>([])
 const message = ref('')
 
 const emit = defineEmits(['changeView', 'deleteConv'])
+
+onMounted(() => messageList.value = props.conversation.messages)
 
 function closeConversation() {
   emit('changeView')
@@ -35,6 +39,7 @@ function sendMessage() {
     )
     .then((response) => {
       console.log(response.data)
+        messageList.value.push(response.data.message as Message)
       message.value = ''
     })
     .catch((error) => console.log(error))
@@ -69,7 +74,7 @@ function sendMessage() {
     </div>
     <div class="pt-5"></div>
     <MessageItemVue
-      v-for="message in props.conversation.messages"
+      v-for="message in messageList"
       :key="message._id"
       :message="message"
     ></MessageItemVue>
@@ -82,6 +87,7 @@ function sendMessage() {
             class="flex-1 border rounded-full py-2 px-4 focus:outline-none focus:ring focus:border-blue-300"
             placeholder="Type a message..."
             v-model="message"
+            @keyup.enter="sendMessage"
           />
           <button
             class="w-[75px] ml-2 py-2 px-4 bg-blue-500 hover:bg-blue-700 text-white font-bold rounded-full"
