@@ -14,7 +14,10 @@ const message = ref('')
 
 const emit = defineEmits(['changeView', 'deleteConv'])
 
-onMounted(() => messageList.value = props.conversation.messages)
+onMounted(() => {
+    console.log(props.conversation)
+    messageList.value = props.conversation.messages
+})
 
 function closeConversation() {
   emit('changeView')
@@ -38,9 +41,8 @@ function sendMessage() {
       }
     )
     .then((response) => {
-      console.log(response.data)
         messageList.value.push(response.data.message as Message)
-      message.value = ''
+        message.value = ''
     })
     .catch((error) => console.log(error))
 }
