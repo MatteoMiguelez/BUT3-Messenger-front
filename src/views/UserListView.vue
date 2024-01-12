@@ -8,13 +8,13 @@ import type { Conversation } from '@/models/conversation'
 import useUserStore from '@/store/userStore'
 import useConversationStore from '@/store/conversationStore'
 
-const selectedUsersIds = ref<Array<string>>([])
-const userList = ref<User[]>([])
-
 const emit = defineEmits(['createConv', 'existingConv'])
 
 const userStore = useUserStore()
 const conversationStore = useConversationStore()
+
+const selectedUsersIds = ref<Array<string>>([])
+const userList = ref<User[]>([])
 
 onMounted(async () => {
   await axios
@@ -23,7 +23,7 @@ onMounted(async () => {
       const result = response.data.users
       if (result) {
         userList.value = result.filter((user) => user._id != userStore.getConnectedUser()?._id)
-          userStore.setUsers(userList.value)
+        userStore.setUsers(userList.value)
       }
     })
 })

@@ -13,6 +13,13 @@ const useMessageStore = defineStore('messageStore', () => {
     messsageList.value.push(message)
   }
 
+  function editMessage(id: string, newMessage: Message): void{
+    const index : number= messsageList.value.findIndex((message) => message._id === id)
+    if (index !== -1){
+      messsageList.value[index] = newMessage
+    }
+  }
+
   function getMessages(): Message[] {
     return messsageList.value
   }
@@ -25,6 +32,7 @@ const useMessageStore = defineStore('messageStore', () => {
   return {
     setMessages,
     addMessage,
+    editMessage,
     getMessages,
     getUserIdByMessageId
   }
