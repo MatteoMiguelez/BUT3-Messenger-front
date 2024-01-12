@@ -23,6 +23,7 @@ onMounted(async () => {
       const result = response.data.users
       if (result) {
         userList.value = result.filter((user) => user._id != userStore.getConnectedUser()?._id)
+          userStore.setUsers(userList.value)
       }
     })
 })

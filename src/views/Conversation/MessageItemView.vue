@@ -3,6 +3,13 @@ import type { Message } from '@/models/message'
 import type { User } from '@/models/user'
 import axios from 'axios'
 import { onMounted, ref } from 'vue'
+import useMessageStore from '@/store/messageStore'
+import useUserStore from '@/store/userStore'
+
+const messageStore = useMessageStore()
+const userStore = useUserStore()
+
+const emit = defineEmits(['replyToMessage'])
 
 const props = defineProps<{
   message: Message
@@ -10,18 +17,36 @@ const props = defineProps<{
 
 const message = ref<Message>(props.message)
 const edition = ref<boolean>(false)
-const deleted = ref<boolean>(false)
-const editedMessage = ref('')
+const editedMessageContent = ref<string>('')
+const usernameOfRespondedMessage = ref<string>('')
+const repliedMessageContent = ref<string>('')
+const usernameReplyTo = ref<string>('')
 
 onMounted(() => {
   message.value = props.message
+  if (props.message.replyTo) {
+    const repliedMessage = messageStore.getUserIdByMessageId(props.message.replyTo)
+    if (repliedMessage) {
+      const username = userStore.getUserNameById(repliedMessage.from)
+      repliedMessageContent.value = repliedMessage.content
+      if (username) {
+        usernameOfRespondedMessage.value = username
+      }
+    }
+    const username = userStore.getUserNameById(props.message.from)
+    if (username) {
+      usernameReplyTo.value = username
+    }
+  }
 })
 
 function isCurrentUser(): boolean {
   return props.message.from === (JSON.parse(localStorage.getItem('user')) as User)._id
 }
 
-function reply() {}
+function reply(): void {
+  emit('replyToMessage', message.value)
+}
 
 async function deleteMessage() {
   await axios
@@ -37,23 +62,27 @@ async function deleteMessage() {
 }
 
 async function editMessage() {
-  await axios
-    .put(
-      `http://localhost:${import.meta.env.VITE_PORT}/messages/` + props.message._id,
-      {
-        newMessageContent: editedMessage.value
-      },
-      {
-        headers: {
-          Authorization: localStorage.getItem('token')
+  if (message.value.content === editedMessageContent.value) {
+    edition.value = false
+  } else {
+    await axios
+      .put(
+        `http://localhost:${import.meta.env.VITE_PORT}/messages/` + props.message._id,
+        {
+          newMessageContent: editedMessageContent.value
+        },
+        {
+          headers: {
+            Authorization: localStorage.getItem('token')
+          }
         }
-      }
-    )
-    .then((response) => {
-      edition.value = false
-      message.value = response.data.message
-    })
-    .catch((error) => console.log(error))
+      )
+      .then((response) => {
+        edition.value = false
+        message.value = response.data.message
+      })
+      .catch((error) => console.log(error))
+  }
 }
 
 function closeEdition() {
@@ -77,9 +106,13 @@ function closeEdition() {
       </button>
     </div>
     <div v-else class="flex items-center group justify-end">
+      <div v-if="message.replyTo">
+        {{ usernameOfRespondedMessage }} a répondu à {{ usernameReplyTo }} :
+        {{ repliedMessageContent }}
+      </div>
       <div v-if="message.edited && !message.deleted">Edited</div>
       <div v-if="!edition">
-        <div v-if="deleted || !message.deleted">
+        <div v-if="!message.deleted">
           <button @click="deleteMessage">
             <svg xmlns="http://www.w3.org/2000/svg" height="16" width="14" viewBox="0 0 448 512">
               <!--!Font Awesome Free 6.5.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2024 Fonticons, Inc.-->
@@ -117,7 +150,7 @@ function closeEdition() {
         class="relative flex flex-row gap-2 py-2 px-4 rounded-lg max-w-xs items-end bg-blue-500 text-white"
       >
         <input
-          v-model="editedMessage"
+          v-model="editedMessageContent"
           type="text"
           placeholder="Type a message..."
           style="color: black"
