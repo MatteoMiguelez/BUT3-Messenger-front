@@ -80,7 +80,7 @@ function getExistingConversationByUsers(): Conversation | undefined {
   <h2 class="font-bold text-3xl p-2">Users</h2>
   <button
     :disabled="!selectedUsersIds.length"
-    @click="createConversation"
+    @click="newConversation"
     :class="
       twMerge(
         'py-2 px-4 my-4 bg-blue-500 hover:bg-blue-700 text-white font-bold rounded',

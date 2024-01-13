@@ -1,6 +1,5 @@
 <script setup lang="ts">
-import axios, { AxiosResponse } from 'axios'
-import { onMounted, ref } from 'vue'
+import { onMounted } from 'vue'
 import type { Conversation } from '@/models/conversation'
 import ConversationView from './ConversationView.vue'
 import ConversationItemView from './ConversationItemView.vue'
@@ -10,32 +9,30 @@ import useConversationStore from '@/store/conversationStore'
 import router from '@/router'
 import useSocketStore from '@/store/socketStore'
 
-//const router = useRouter()
-
-//const socketStore = useSocketStore()
 
 const userStore = useUserStore()
 const socketStore = useSocketStore()
 const conversationStore = useConversationStore()
 
-// const selectedConversation = ref()
-// const showConversation = ref(false)
+
+
 
 onMounted(async () => {
   await handleConnectedUser()
   await conversationStore.fetchConversations()
   socketStore.watchNewConversation(handleNewConversationSocket)
+  socketStore.watchConversationDeleted(handleConversationDeletedSocket)
 })
 
 function getSelectedConversation(): Conversation {
   return conversationStore.getSelectedConversation()
 }
+
+function handleConversationDeletedSocket(convId: string) {
+  conversationStore.deleteConversation(convId)
+}
 function handleNewConversationSocket(convId: string, conversation: Conversation) {
-  if(conversationStore.conversationExist(convId)) {
-    return
-  } else {
     conversationStore.addConversation(conversation)
-  }
 }
 
 
@@ -55,31 +52,7 @@ async function handleConnectedUser() {
 
 
 
-function changeView() {
 
-  // showConversation.value = false
-}
-
-async function deleteConversation(conversation: Conversation) {
-  if (localStorage.getItem('token')) {
-    await axios
-      .delete(`http://localhost:${import.meta.env.VITE_PORT}/conversations/` + conversation._id, {
-        headers: {
-          Authorization: localStorage.getItem('token')
-        }
-      })
-      .then((response) => {
-        conversationStore.deleteConversation(response.data.conversation._id)
-        // showConversation.value = false
-        // selectedConversation.value = null
-      })
-      .catch((error) => {
-        return error
-      })
-  } else {
-    await router.push('/login')
-  }
-}
 </script>
 
 <template>
@@ -112,8 +85,6 @@ async function deleteConversation(conversation: Conversation) {
         <ConversationView
           v-else
           :conversation="getSelectedConversation()"
-          @changeView="changeView"
-          @deleteConv="deleteConversation"
         ></ConversationView>
       </div>
     </div>

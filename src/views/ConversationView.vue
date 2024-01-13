@@ -5,6 +5,7 @@ import {onMounted, ref} from 'vue'
 import MessageItemVue from '@/views/Conversation/MessageItemView.vue'
 import type {Message} from "@/models/message";
 import useConversationStore from '@/store/conversationStore'
+import useSocketStore from '@/store/socketStore'
 
 const props = defineProps<{
   conversation: Conversation
@@ -13,20 +14,27 @@ const props = defineProps<{
 const messageList = ref<Message[]>([])
 const message = ref('')
 const conversationStore = useConversationStore()
+const socketStore = useSocketStore()
 
-const emit = defineEmits(['deleteConv'])
+
 
 onMounted(() => {
-    messageList.value = props.conversation.messages
+  messageList.value = props.conversation.messages
+  socketStore.watchNewMessage(handleNewMessageSocket)
 })
 
+function handleNewMessageSocket(convId: string, message: Message) {
+ conversationStore.addMessageToConversation(convId, message)
+  messageList.value.push(message)
+}
 function closeConversation() {
   conversationStore.showConversation = false
 }
 
-function deleteConversation() {
-  emit('deleteConv', props.conversation)
+async function deleteConversation() {
+  await conversationStore.deleteConversationById(props.conversation._id)
 }
+
 
 function sendMessage() {
   axios

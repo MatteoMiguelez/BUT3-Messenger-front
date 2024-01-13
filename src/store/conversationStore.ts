@@ -2,10 +2,12 @@ import type { Conversation } from '@/models/conversation'
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import axios from 'axios'
+import router from '@/router'
+import type { Message } from '@/models/message'
 
 const useConversationStore = defineStore('conversationStore', () => {
   const conversationList = ref<Conversation[]>([])
-  let showConversation = ref<boolean>(false)
+  const showConversation = ref<boolean>(false)
   const selectedConversation = ref<Conversation>()
 
 
@@ -35,6 +37,26 @@ const useConversationStore = defineStore('conversationStore', () => {
         return error
       })
   }
+
+  async function deleteConversationById(id: string): Promise<void> {
+    if (localStorage.getItem('token')) {
+      await axios
+        .delete(`http://localhost:${import.meta.env.VITE_PORT}/conversations/` + id, {
+          headers: {
+            Authorization: localStorage.getItem('token')
+          }
+        })
+        .then((response) => {
+          deleteConversation(response.data.conversation._id)
+          showConversation.value = false
+        })
+        .catch((error) => {
+          return error
+        })
+    } else {
+      await router.push('/login')
+    }
+  }
   async function fetchConversations(): Promise<void> {
     await axios
       .get(`http://localhost:${import.meta.env.VITE_PORT}/conversations`, {
@@ -56,6 +78,7 @@ const useConversationStore = defineStore('conversationStore', () => {
   }
 
   function addConversation(conversation: Conversation): void {
+    if(conversationExist(conversation._id)) return
     conversationList.value.push(conversation)
   }
 
@@ -78,6 +101,31 @@ const useConversationStore = defineStore('conversationStore', () => {
     return false
   }
 
+  function addMessageToConversation(convId: string, message: Message): void {
+    if(!messageExistInConversation(convId, message._id)) return
+    const index : number = conversationList.value.findIndex((conversation : Conversation) : boolean => {
+      return conversation._id === convId
+    })
+    if (index !== -1) {
+      conversationList.value[index].messages.push(message)
+    }
+  }
+
+  function messageExistInConversation(convId: string, msgId: string): boolean {
+    const conversation = conversationList.value.find((conversation : Conversation) : boolean => {
+      return conversation._id === convId
+    })
+    if (conversation) {
+      const index : number = conversation.messages.findIndex((message : Message) : boolean => {
+        return message._id === msgId
+      })
+      if (index !== -1) {
+        return true
+      }
+    }
+    return false
+  }
+
   function getConversations(): Conversation[] {
     return conversationList.value
   }
@@ -93,7 +141,9 @@ const useConversationStore = defineStore('conversationStore', () => {
     setSelectedConversation,
     getSelectedConversation,
     showConversation,
-    openConversation
+    openConversation,
+    deleteConversationById,
+    addMessageToConversation
   }
 })
 
