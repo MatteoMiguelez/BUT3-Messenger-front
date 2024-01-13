@@ -3,41 +3,53 @@ import type { Conversation } from '@/models/conversation'
 import axios from 'axios'
 import { ref } from 'vue'
 import MessageItemVue from '@/views/Conversation/MessageItemView.vue'
-import type { Message } from '@/models/message'
-import useMessageStore from '@/store/messageStore'
-import type { MessageBody } from '@/models/messageBody'
+import type {Message} from "@/models/message";
+import useConversationStore from '@/store/conversationStore'
+import useSocketStore from '@/store/socketStore'
 
-const props = defineProps<{
-  conversation: Conversation
-}>()
+const message = ref('')
+const conversationStore = useConversationStore()
+const socketStore = useSocketStore()
 
-const emit = defineEmits(['changeView', 'deleteConv'])
 
-const messageStore = useMessageStore()
 
-const messageContent = ref<string>('')
-const messageReplied = ref<Message | null>(null)
+onMounted(() => {
+  socketStore.watchNewMessage(handleNewMessageSocket)
+  socketStore.watchMessageDeleted(handleMessageDeleted)
+  socketStore.watchMessageEdited(handleMessageEdited)
+})
 
-function closeConversation(): void {
-    console.log(props.conversation.messages)
-  emit('changeView')
+function handleNewMessageSocket(convId: string, message: Message) {
+ conversationStore.addMessageToConversation(message)
+}
+function handleMessageDeleted(messId: string, message: Message) {
+ conversationStore.deleteMessageInConv(messId)
+}
+function handleMessageEdited(messId: string, message: Message) {
+ conversationStore.editMessage(messId, message)
+}
+function closeConversation() {
+  conversationStore.showConversation = false
 }
 
-function deleteConversation(): void {
-  emit('deleteConv', props.conversation)
+async function deleteConversation() {
+  await conversationStore.deleteConversationById(getConversation()._id)
 }
 
-function sendMessage(): void {
-  let corps: MessageBody = {
-    messageContent: messageContent.value
-  }
-  if (messageReplied.value) {
-    corps.messageReplyId = messageReplied.value?._id
-  }
+function getConversation(): Conversation {
+  return conversationStore.getSelectedConversation();
+}
+function getMessages(): Message[] {
+  return getConversation().messages;
+}
+
+function sendMessage() {
   axios
     .post(
-      `http://localhost:${import.meta.env.VITE_PORT}/conversations/` + props.conversation._id,
-      corps,
+      `http://localhost:${import.meta.env.VITE_PORT}/conversations/` + getConversation()._id,
+      {
+        messageContent: message.value
+      },
       {
         headers: {
           Authorization: localStorage.getItem('token')
@@ -45,27 +57,14 @@ function sendMessage(): void {
       }
     )
     .then((response) => {
-      const createdMessage: Message = response.data.message
-      if (createdMessage) {
-        messageStore.addMessage(createdMessage)
-      }
-      messageContent.value = ''
-      messageReplied.value = null
+      conversationStore.addMessageToConversation(response.data.message as Message)
     })
     .catch((error) => console.log(error))
-}
-
-function replyToMessage(message: Message): void {
-  messageReplied.value = message
-}
-
-function deleteReply(): void {
-  messageReplied.value = null
 }
 </script>
 <template>
   <div class="relative flex flex-col h-full p-4">
-    <h2 class="text-3xl">{{ props.conversation.title }}</h2>
+    <h2 class="text-3xl">{{ getConversation().title }}</h2>
     <div>
       <button
         @click="deleteConversation"
@@ -82,7 +81,7 @@ function deleteReply(): void {
     </div>
     <div class="pt-5"></div>
     <MessageItemVue
-      v-for="message in messageStore.getMessages()"
+      v-for="message in messageList"
       :key="message._id"
       :message="message"
       @replyToMessage="replyToMessage($event)"
@@ -101,7 +100,7 @@ function deleteReply(): void {
             type="text"
             class="flex-1 border rounded-full py-2 px-4 focus:outline-none focus:ring focus:border-blue-300"
             placeholder="Type a message..."
-            v-model="messageContent"
+            v-model="message"
             @keyup.enter="sendMessage"
           />
           <button
