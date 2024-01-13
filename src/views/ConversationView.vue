@@ -1,17 +1,19 @@
 <script setup lang="ts">
 import type { Conversation } from '@/models/conversation'
 import axios from 'axios'
-import {onMounted, ref} from 'vue'
+import { onMounted, ref } from 'vue'
 import MessageItemVue from '@/views/Conversation/MessageItemView.vue'
-import type {Message} from "@/models/message";
+import type { Message } from '@/models/message'
 import useConversationStore from '@/store/conversationStore'
 import useSocketStore from '@/store/socketStore'
+import type { MessageBody } from '@/models/messageBody'
+import {FontAwesomeIcon} from "@fortawesome/vue-fontawesome";
 
-const message = ref('')
 const conversationStore = useConversationStore()
 const socketStore = useSocketStore()
 
-
+const messageContent = ref('')
+const messageReplied = ref<Message | null>(null)
 
 onMounted(() => {
   socketStore.watchNewMessage(handleNewMessageSocket)
@@ -20,13 +22,13 @@ onMounted(() => {
 })
 
 function handleNewMessageSocket(convId: string, message: Message) {
- conversationStore.addMessageToConversation(message)
+  conversationStore.addMessageToConversation(message)
 }
 function handleMessageDeleted(messId: string, message: Message) {
- conversationStore.deleteMessageInConv(messId)
+  conversationStore.deleteMessageInConv(messId)
 }
 function handleMessageEdited(messId: string, message: Message) {
- conversationStore.editMessage(messId, message)
+  conversationStore.editMessage(messId, message)
 }
 function closeConversation() {
   conversationStore.showConversation = false
@@ -37,19 +39,27 @@ async function deleteConversation() {
 }
 
 function getConversation(): Conversation {
-  return conversationStore.getSelectedConversation();
+  return conversationStore.getSelectedConversation()
 }
 function getMessages(): Message[] {
-  return getConversation().messages;
+  return getConversation().messages
+}
+
+function replyToMessage(message: Message): void {
+  messageReplied.value = message
 }
 
 function sendMessage() {
+  let corps: MessageBody = {
+    messageContent: messageContent.value
+  }
+  if (messageReplied.value) {
+    corps.messageReplyId = messageReplied.value?._id
+  }
   axios
     .post(
       `http://localhost:${import.meta.env.VITE_PORT}/conversations/` + getConversation()._id,
-      {
-        messageContent: message.value
-      },
+      corps,
       {
         headers: {
           Authorization: localStorage.getItem('token')
@@ -57,9 +67,18 @@ function sendMessage() {
       }
     )
     .then((response) => {
-      conversationStore.addMessageToConversation(response.data.message as Message)
+      const createdMessage: Message = response.data.message
+      if (createdMessage) {
+        conversationStore.addMessageToConversation(createdMessage)
+      }
+      messageContent.value = ''
+      messageReplied.value = null
     })
     .catch((error) => console.log(error))
+}
+
+function deleteReply(): void {
+  messageReplied.value = null
 }
 </script>
 <template>
@@ -70,23 +89,13 @@ function sendMessage() {
         @click="deleteConversation"
         class="absolute w-9 h-9 top-2 right-14 bg-red-600 hover:bg-red-700 p-2 rounded-full"
       >
-        <svg xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 0 448 512">
-          <!--! Font Awesome Free 6.4.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license (Commercial License) Copyright 2023 Fonticons, Inc. -->
-          <path
-            d="M135.2 17.7L128 32H32C14.3 32 0 46.3 0 64S14.3 96 32 96H416c17.7 0 32-14.3 32-32s-14.3-32-32-32H320l-7.2-14.3C307.4 6.8 296.3 0 284.2 0H163.8c-12.1 0-23.2 6.8-28.6 17.7zM416 128H32L53.2 467c1.6 25.3 22.6 45 47.9 45H346.9c25.3 0 46.3-19.7 47.9-45L416 128z"
-          />
-        </svg>
+          <FontAwesomeIcon :icon="['fas', 'trash']" />
       </button>
       <button
         @click="closeConversation"
         class="absolute w-9 h-9 top-2 right-2 bg-gray-200 hover:bg-gray-300 p-2 rounded-full"
       >
-        <svg xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 0 384 512">
-          <!--! Font Awesome Free 6.4.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license (Commercial License) Copyright 2023 Fonticons, Inc. -->
-          <path
-            d="M342.6 150.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L192 210.7 86.6 105.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L146.7 256 41.4 361.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L192 301.3 297.4 406.6c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L237.3 256 342.6 150.6z"
-          />
-        </svg>
+          <FontAwesomeIcon :icon="['fas', 'xmark']" />
       </button>
     </div>
     <div class="pt-5"></div>
@@ -94,16 +103,23 @@ function sendMessage() {
       v-for="message in getMessages()"
       :key="message._id"
       :message="message"
+      @replyToMessage="replyToMessage($event)"
     ></MessageItemVue>
 
     <div class="bg-white p-4 shadow-md rounded-lg flex relative bottom-0 mt-5">
       <div class="flex flex-col w-full">
+        <div v-if="messageReplied">
+          <span style="background: deepskyblue">Replying to: {{ messageReplied.content }}</span>
+          <button @click="deleteReply">
+            <FontAwesomeIcon :icon="['fas', 'circle-xmark']" />
+          </button>
+        </div>
         <div class="flex">
           <input
             type="text"
             class="flex-1 border rounded-full py-2 px-4 focus:outline-none focus:ring focus:border-blue-300"
             placeholder="Type a message..."
-            v-model="message"
+            v-model="messageContent"
             @keyup.enter="sendMessage"
           />
           <button

@@ -1,28 +1,86 @@
 <script setup lang="ts">
 import type { Message } from '@/models/message'
-import type { User } from '@/models/user'
 import axios from 'axios'
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
+import useConversationStore from '@/store/conversationStore'
+import useUserStore from '@/store/userStore'
+import MessageReaction from '@/components/message/MessageReactionButtons.vue'
+import { REACTION_EMOJI_MAP } from '@/models/message'
+import type { Reaction } from '@/models/reaction'
+import OverlayPanel from 'primevue/overlaypanel'
+import Tag from 'primevue/tag'
+import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
 
 const props = defineProps<{
   message: Message
 }>()
 
-const message = ref<Message>(props.message)
-const edition = ref<boolean>(false)
-const deleted = ref<boolean>(false)
-const editedMessage = ref('')
+const emit = defineEmits(['replyToMessage'])
 
-onMounted(() => {
-  message.value = props.message
+const conversationStore = useConversationStore()
+const userStore = useUserStore()
+
+const messageItem = ref<Message>(props.message)
+const edition = ref<boolean>(false)
+const editedMessageContent = ref<string>('')
+const usernameOfRespondedMessage = ref<string>('')
+const repliedMessageContent = ref<string>('')
+const usernameReplyTo = ref<string>('')
+const reactions = ref<Reaction[]>([])
+
+const op = ref()
+
+const isCurrentUser = computed(() => {
+  return messageItem.value.from === userStore.getConnectedUser()?._id
 })
 
-
-function isCurrentUser(): boolean {
-  return props.message.from === (JSON.parse(localStorage.getItem('user')) as User)._id
+const toggleReactionButton = (event) => {
+  op.value.toggle(event)
 }
 
-function reply() {}
+onMounted(() => {
+  if (props.message.replyTo) {
+    const repliedMessage = conversationStore.getMessageById(props.message.replyTo)
+    if (repliedMessage) {
+      const username = userStore.getUserNameById(repliedMessage.from)
+      repliedMessageContent.value = !repliedMessage.deleted
+        ? repliedMessage.content
+        : 'Message supprimé'
+      if (username) {
+        usernameOfRespondedMessage.value = username
+      }
+    }
+    const username = userStore.getUserNameById(props.message.from)
+    if (username) {
+      usernameReplyTo.value = username
+    }
+  }
+
+  setExistingReactionList()
+})
+
+function setExistingReactionList() {
+  for (const reactionName of Object.values(messageItem.value.reactions)) {
+    const existingReaction = reactions.value.find((reaction) => reaction.name === reactionName)
+
+    if (existingReaction) {
+      existingReaction.number++
+    } else {
+      const emoji = REACTION_EMOJI_MAP[reactionName] || ''
+      const newReaction: Reaction = {
+        name: reactionName,
+        emoji,
+        number: 1
+      }
+
+      reactions.value.push(newReaction)
+    }
+  }
+}
+
+function reply(): void {
+  emit('replyToMessage', messageItem.value)
+}
 
 async function deleteMessage() {
   await axios
@@ -32,115 +90,136 @@ async function deleteMessage() {
       }
     })
     .then((response) => {
-      message.value.deleted = true
+      messageItem.value = response.data.message
     })
     .catch((error) => console.log(error))
 }
 
 async function editMessage() {
-  await axios
-    .put(
-      `http://localhost:${import.meta.env.VITE_PORT}/messages/` + props.message._id,
-      {
-        newMessageContent: editedMessage.value
-      },
-      {
-        headers: {
-          Authorization: localStorage.getItem('token')
+  if (messageItem.value.content === editedMessageContent.value) {
+    edition.value = false
+  } else {
+    await axios
+      .put(
+        `http://localhost:${import.meta.env.VITE_PORT}/messages/` + props.message._id,
+        {
+          newMessageContent: editedMessageContent.value
+        },
+        {
+          headers: {
+            Authorization: localStorage.getItem('token')
+          }
         }
-      }
-    )
-    .then((response) => {
-      edition.value = false
-      message.value = response.data.message
-    })
-    .catch((error) => console.log(error))
+      )
+      .then((response) => {
+        edition.value = false
+        messageItem.value = response.data.message
+      })
+      .catch((error) => console.log(error))
+  }
 }
 
-function closeEdition() {
+function closeEdition(): void {
   edition.value = false
+}
+
+function closeReactionsButtons(updatedMessage: Message) {
+  messageItem.value = updatedMessage
+  op.value.hide()
+  reactions.value = []
+  setExistingReactionList()
 }
 </script>
 <template>
   <div class="pt-1 pb-1">
-    <div v-if="!isCurrentUser()" class="flex flex-col w-max items-start">
-      <div class="relative flex flex-row gap-2 py-2 px-4 rounded-lg max-w-xs items-end bg-gray-200">
-        <p v-if="!message.deleted">{{ message.content }}</p>
-        <p v-else class="italic">Message supprimé</p>
-      </div>
-      <button @click="reply">
-        <svg xmlns="http://www.w3.org/2000/svg" height="16" width="16" viewBox="0 0 512 512">
-          <!--!Font Awesome Free 6.5.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2024 Fonticons, Inc.-->
-          <path
-            d="M205 34.8c11.5 5.1 19 16.6 19 29.2v64H336c97.2 0 176 78.8 176 176c0 113.3-81.5 163.9-100.2 174.1c-2.5 1.4-5.3 1.9-8.1 1.9c-10.9 0-19.7-8.9-19.7-19.7c0-7.5 4.3-14.4 9.8-19.5c9.4-8.8 22.2-26.4 22.2-56.7c0-53-43-96-96-96H224v64c0 12.6-7.4 24.1-19 29.2s-25 3-34.4-5.4l-160-144C3.9 225.7 0 217.1 0 208s3.9-17.7 10.6-23.8l160-144c9.4-8.5 22.9-10.6 34.4-5.4z"
-          />
-        </svg>
-      </button>
-    </div>
-    <div v-else class="flex items-center group justify-end">
-      <div v-if="message.edited && !message.deleted">Edited</div>
-      <div v-if="!edition">
-        <div v-if="deleted || !message.deleted">
-          <button @click="deleteMessage">
-            <svg xmlns="http://www.w3.org/2000/svg" height="16" width="14" viewBox="0 0 448 512">
-              <!--!Font Awesome Free 6.5.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2024 Fonticons, Inc.-->
-              <path
-                d="M135.2 17.7L128 32H32C14.3 32 0 46.3 0 64S14.3 96 32 96H416c17.7 0 32-14.3 32-32s-14.3-32-32-32H320l-7.2-14.3C307.4 6.8 296.3 0 284.2 0H163.8c-12.1 0-23.2 6.8-28.6 17.7zM416 128H32L53.2 467c1.6 25.3 22.6 45 47.9 45H346.9c25.3 0 46.3-19.7 47.9-45L416 128z"
-              />
-            </svg>
-          </button>
-          <button @click="edition = true">
-            <svg xmlns="http://www.w3.org/2000/svg" height="16" width="16" viewBox="0 0 512 512">
-              <!--!Font Awesome Free 6.5.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2024 Fonticons, Inc.-->
-              <path
-                d="M362.7 19.3L314.3 67.7 444.3 197.7l48.4-48.4c25-25 25-65.5 0-90.5L453.3 19.3c-25-25-65.5-25-90.5 0zm-71 71L58.6 323.5c-10.4 10.4-18 23.3-22.2 37.4L1 481.2C-1.5 489.7 .8 498.8 7 505s15.3 8.5 23.7 6.1l120.3-35.4c14.1-4.2 27-11.8 37.4-22.2L421.7 220.3 291.7 90.3z"
-              />
-            </svg>
-          </button>
-          <button @click="reply">
-            <svg xmlns="http://www.w3.org/2000/svg" height="16" width="16" viewBox="0 0 512 512">
-              <!--!Font Awesome Free 6.5.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2024 Fonticons, Inc.-->
-              <path
-                d="M205 34.8c11.5 5.1 19 16.6 19 29.2v64H336c97.2 0 176 78.8 176 176c0 113.3-81.5 163.9-100.2 174.1c-2.5 1.4-5.3 1.9-8.1 1.9c-10.9 0-19.7-8.9-19.7-19.7c0-7.5 4.3-14.4 9.8-19.5c9.4-8.8 22.2-26.4 22.2-56.7c0-53-43-96-96-96H224v64c0 12.6-7.4 24.1-19 29.2s-25 3-34.4-5.4l-160-144C3.9 225.7 0 217.1 0 208s3.9-17.7 10.6-23.8l160-144c9.4-8.5 22.9-10.6 34.4-5.4z"
-              />
-            </svg>
-          </button>
-        </div>
-        <div
-          class="relative flex flex-row gap-2 py-2 px-4 rounded-lg max-w-xs items-end bg-blue-500 text-white"
-        >
-          <p v-if="!message.deleted">{{ message.content }}</p>
-          <p v-else class="italic">Message supprimé</p>
-        </div>
+    <div class="flex flex-col">
+      <div
+        v-if="messageItem.edited && !messageItem.deleted"
+        class="flex text-xs"
+        :class="isCurrentUser ? 'justify-end' : ''"
+      >
+        Edited
       </div>
       <div
-        v-else
-        class="relative flex flex-row gap-2 py-2 px-4 rounded-lg max-w-xs items-end bg-blue-500 text-white"
+        v-if="messageItem.replyTo"
+        class="flex text-xs"
+        :class="isCurrentUser ? 'justify-end' : ''"
+      >
+        <FontAwesomeIcon :icon="['fas', 'reply']" class="pe-1 pt-1" />
+        {{ usernameOfRespondedMessage }} a répondu à {{ usernameReplyTo }} :
+        {{ repliedMessageContent }}
+      </div>
+      <div
+        v-if="edition"
+        class="flex flex-row gap-2 py-2 px-4 rounded-lg bg-blue-500 justify-end self-end"
       >
         <input
-          v-model="editedMessage"
+          v-model="editedMessageContent"
           type="text"
           placeholder="Type a message..."
           style="color: black"
           @keyup.enter="editMessage"
         />
         <button @click="editMessage">
-          <svg xmlns="http://www.w3.org/2000/svg" height="16" width="14" viewBox="0 0 448 512">
-            <!--!Font Awesome Free 6.5.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2024 Fonticons, Inc.-->
-            <path
-              d="M438.6 105.4c12.5 12.5 12.5 32.8 0 45.3l-256 256c-12.5 12.5-32.8 12.5-45.3 0l-128-128c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0L160 338.7 393.4 105.4c12.5-12.5 32.8-12.5 45.3 0z"
-            />
-          </svg>
+          <FontAwesomeIcon :icon="['fas', 'check']" />
         </button>
         <button @click="closeEdition">
-          <svg xmlns="http://www.w3.org/2000/svg" height="16" width="12" viewBox="0 0 384 512">
-            <!--!Font Awesome Free 6.5.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2024 Fonticons, Inc.-->
-            <path
-              d="M342.6 150.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L192 210.7 86.6 105.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L146.7 256 41.4 361.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L192 301.3 297.4 406.6c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L237.3 256 342.6 150.6z"
-            />
-          </svg>
+          <FontAwesomeIcon :icon="['fas', 'xmark']" />
         </button>
       </div>
+      <div v-else class="flex" :class="isCurrentUser ? 'justify-end' : ''">
+        <img
+          v-if="!isCurrentUser"
+          class="w-8 h-8 mb-3 rounded-full shadow-lg me-3"
+          :src="
+            'https://source.unsplash.com/' +
+            userStore.getUserProfilPicIdById(messageItem.from) +
+            '/100x100'
+          "
+          alt="Bonnie image"
+        />
+        <div
+          class="relative flex flex-row gap-2 py-2 px-4 rounded-lg max-w-xs items-end"
+          :class="isCurrentUser ? 'bg-blue-500 text-white order-2' : 'bg-gray-200 order-1'"
+        >
+          <p v-if="!messageItem.deleted">{{ messageItem.content }}</p>
+          <p v-else class="italic">Message supprimé</p>
+        </div>
+        <div
+          v-if="!messageItem.deleted"
+          class="flex"
+          :class="isCurrentUser ? 'order-1' : 'order-2'"
+        >
+          <button v-if="isCurrentUser" @click="deleteMessage" class="pe-2">
+            <FontAwesomeIcon :icon="['fas', 'trash']" />
+          </button>
+          <button v-if="isCurrentUser" @click="edition = true" class="pe-2">
+            <FontAwesomeIcon :icon="['fas', 'pen']" />
+          </button>
+          <button @click="toggleReactionButton" class="pe-2">
+            <FontAwesomeIcon :icon="['far', 'face-smile']" />
+          </button>
+          <OverlayPanel ref="op">
+            <MessageReaction
+              :id="messageItem._id"
+              @closeReactionsButtons="closeReactionsButtons"
+            ></MessageReaction>
+          </OverlayPanel>
+          <button @click="reply" class="pe-2">
+            <FontAwesomeIcon :icon="['fas', 'reply']" />
+          </button>
+        </div>
+      </div>
+    </div>
+    <div>
+      <ul class="flex" :class="{ 'justify-end': isCurrentUser }">
+        <li v-for="reaction in reactions" v-bind:key="reaction.name">
+          <Tag value="test" class="bg-slate-300 px-2 py-1" rounded>
+            <span v-if="reaction.number > 1">{{ reaction.number }}</span>
+            {{ reaction.emoji }}
+          </Tag>
+        </li>
+      </ul>
     </div>
   </div>
 </template>

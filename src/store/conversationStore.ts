@@ -141,6 +141,14 @@ const useConversationStore = defineStore('conversationStore', () => {
     return conversationList.value
   }
 
+  function getMessageById(id: string): Message | null {
+    const message: Message[] | undefined = selectedConversation.value?.messages.filter((message: Message) => message._id === id)
+    if (message){
+      return message[0] ?? null
+    }
+    return null
+  }
+
   return {
     setConversations,
     getConversations,
@@ -156,7 +164,8 @@ const useConversationStore = defineStore('conversationStore', () => {
     deleteConversationById,
     addMessageToConversation,
     deleteMessageInConv,
-    editMessage
+    editMessage,
+    getMessageById
   }
 })
 

@@ -13,11 +13,10 @@ const useUserStore = defineStore('userStore', () => {
   const users = ref<User[]>([])
   const connectedUsers = ref<User[]>([])
 
-
   function getConnectedUsers(): User[] {
     return connectedUsers.value
   }
-function getUsers(): User[] {
+  function getUsers(): User[] {
     return users.value
   }
 
@@ -60,7 +59,39 @@ function getUsers(): User[] {
     return state.connectedUser
   }
 
-  return { setConnectedUser, getConnectedUser, fetchUsers, getUsers, getConnectedUsers, setConnectedUsers, addConnectedUser, isConnected, fetchConnectedUsers }
+  function getUserNameById(id: string): string | null {
+    const connectedUser: User | null = getConnectedUser()
+    if (connectedUser && connectedUser._id === id) {
+      return connectedUser.username
+    }
+    const user = users.value.filter((user: User) => user._id === id)[0]
+    if (user) {
+      return user.username
+    }
+    return null
+  }
+
+  function getUserProfilPicIdById(id: string): string | null {
+    const user = users.value.find((user) => user._id === id)
+    if (user) {
+      return user.profilePicId
+    }
+    return null
+  }
+
+  return {
+    setConnectedUser,
+    getConnectedUser,
+    fetchUsers,
+    getUsers,
+    getUserNameById,
+    getUserProfilPicIdById,
+    getConnectedUsers,
+    setConnectedUsers,
+    addConnectedUser,
+    isConnected,
+    fetchConnectedUsers
+  }
 })
 
 export default useUserStore

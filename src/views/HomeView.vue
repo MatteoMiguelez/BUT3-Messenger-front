@@ -9,13 +9,9 @@ import useConversationStore from '@/store/conversationStore'
 import router from '@/router'
 import useSocketStore from '@/store/socketStore'
 
-
 const userStore = useUserStore()
 const socketStore = useSocketStore()
 const conversationStore = useConversationStore()
-
-
-
 
 onMounted(async () => {
   await handleConnectedUser()
@@ -32,9 +28,8 @@ function handleConversationDeletedSocket(convId: string) {
   conversationStore.deleteConversation(convId)
 }
 function handleNewConversationSocket(convId: string, conversation: Conversation) {
-    conversationStore.addConversation(conversation)
+  conversationStore.addConversation(conversation)
 }
-
 
 function showConversationView(): boolean {
   return conversationStore.showConversation
@@ -49,20 +44,16 @@ async function handleConnectedUser() {
     }
   }
 }
-
-
-
-
 </script>
 
 <template>
   <main class="h-screen">
     <div class="flex flex-row h-screen">
       <div class="flex-col w-1/3 max-w-[500px]">
-        <div class="bg-white p-4 shadow-md rounded-lg h-[100px]">
+        <div class="bg-white p-4 shadow-md rounded-lg">
           <div class="flex items-center">
             <img
-              :src="`https://source.unsplash.com/userid/100x100`"
+              :src="`https://source.unsplash.com/${ userStore.getConnectedUser()?._id }/100x100`"
               alt="User Image"
               class="w-12 h-12 rounded-full mr-4"
             />
@@ -72,19 +63,19 @@ async function handleConnectedUser() {
             </div>
           </div>
         </div>
-        <ConversationItemView
-          v-for="conversation in conversationStore.getConversations()"
-          :key="conversation._id"
-          :conversation="conversation"
-        ></ConversationItemView>
+        <div class="flex flex-col">
+          <h1 class="pt-4 pb-2 text-xl font-bold">Conversations</h1>
+          <ConversationItemView
+            v-for="conversation in conversationStore.getConversations()"
+            :key="conversation._id"
+            :conversation="conversation"
+          ></ConversationItemView>
+        </div>
       </div>
+
       <div class="w-2/3 h-full px-4">
-        <UserListView
-          v-if="!showConversationView()"
-        ></UserListView>
-        <ConversationView
-          v-else
-        ></ConversationView>
+        <UserListView v-if="!showConversationView()"></UserListView>
+        <ConversationView v-else></ConversationView>
       </div>
     </div>
   </main>
