@@ -103,7 +103,13 @@ const useConversationStore = defineStore('conversationStore', () => {
 
   function addMessageToConversation(message: Message): void {
     if(messageExistInConversation(message.conversationId, message._id)) return
-    getSelectedConversation().messages.push(message)
+    if(getSelectedConversation().messages) {
+      getSelectedConversation().messages.push(message)
+    }
+  }
+  function addMessageToConversationById(convId: string,message: Message): void {
+    if(messageExistInConversation(message.conversationId, message._id)) return
+      getConversationById(convId).messages.push(message)
   }
   function deleteMessageInConv( msgId: string): void {
     const conversation = getSelectedConversation()
@@ -113,6 +119,25 @@ const useConversationStore = defineStore('conversationStore', () => {
     if(message) {
       message.deleted = true
     }
+  }
+
+  async function addReactionToMessage(msgId: string, reaction: string): Promise<void> {
+    await axios
+      .post(
+        `http://localhost:${import.meta.env.VITE_PORT}/messages/` + msgId,
+        { reaction: reaction },
+        {
+          headers: {
+            Authorization: localStorage.getItem('token')
+          }
+        }
+      )
+      .then((response) => {
+        if (response.data.message) {
+          return response.data.message
+        }
+      })
+      .catch((error) => console.log(error))
   }
   function editMessage (msgId: string, editedMessage: Message): void {
     const conversation = getSelectedConversation()
@@ -136,7 +161,11 @@ const useConversationStore = defineStore('conversationStore', () => {
     }
     return false
   }
-
+function getConversationById(id: string): Conversation {
+  return <Conversation>conversationList.value.find((conversation : Conversation) : boolean => {
+    return conversation._id === id
+  })
+}
   function getConversations(): Conversation[] {
     return conversationList.value
   }
@@ -156,7 +185,9 @@ const useConversationStore = defineStore('conversationStore', () => {
     deleteConversationById,
     addMessageToConversation,
     deleteMessageInConv,
-    editMessage
+    editMessage,
+    addMessageToConversationById,
+    addReactionToMessage,
   }
 })
 

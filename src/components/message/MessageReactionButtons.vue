@@ -1,30 +1,18 @@
 <script setup lang="ts">
 import axios from 'axios'
 import { REACTION_EMOJI_MAP } from '@/models/message'
+import useConversationStore from '@/store/conversationStore'
+import useMessageStore from '@/store/messageStore'
 
 const props = defineProps<{
   id: string
 }>()
 
 const emit = defineEmits(['closeReactionsButtons'])
-
+const conversationStore = useConversationStore()
 async function addReaction(reactionName: string) {
-  await axios
-    .post(
-      `http://localhost:${import.meta.env.VITE_PORT}/messages/` + props.id,
-      { reaction: reactionName },
-      {
-        headers: {
-          Authorization: localStorage.getItem('token')
-        }
-      }
-    )
-    .then((response) => {
-      if (response.data.message) {
-        emit('closeReactionsButtons', response.data.message)
-      }
-    })
-    .catch((error) => console.log(error))
+  const messageReaction = await conversationStore.addReactionToMessage(props.id, reactionName)
+  emit('closeReactionsButtons', messageReaction)
 }
 </script>
 <template>

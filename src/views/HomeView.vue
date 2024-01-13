@@ -8,6 +8,7 @@ import useUserStore from '@/store/userStore'
 import useConversationStore from '@/store/conversationStore'
 import router from '@/router'
 import useSocketStore from '@/store/socketStore'
+import type { Message } from '@/models/message'
 
 
 const userStore = useUserStore()
@@ -22,7 +23,20 @@ onMounted(async () => {
   await conversationStore.fetchConversations()
   socketStore.watchNewConversation(handleNewConversationSocket)
   socketStore.watchConversationDeleted(handleConversationDeletedSocket)
+  socketStore.watchNewMessage(handleNewMessageSocket)
+  socketStore.watchMessageDeleted(handleMessageDeleted)
+  socketStore.watchMessageEdited(handleMessageEdited)
 })
+
+function handleNewMessageSocket(convId: string, message: Message) {
+  conversationStore.addMessageToConversationById(convId,message)
+}
+function handleMessageDeleted(messId: string, message: Message) {
+  conversationStore.deleteMessageInConv(messId)
+}
+function handleMessageEdited(messId: string, message: Message) {
+  conversationStore.editMessage(messId, message)
+}
 
 function getSelectedConversation(): Conversation {
   return conversationStore.getSelectedConversation()
@@ -77,7 +91,6 @@ async function handleConnectedUser() {
               v-for="conversation in conversationStore.getConversations()"
               :key="conversation._id"
               :conversation="conversation"
-              @openConv="openConversation($event)"
             ></ConversationItemView>
           </div>
         </div>

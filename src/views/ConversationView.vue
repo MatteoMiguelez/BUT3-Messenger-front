@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { Conversation } from '@/models/conversation'
 import axios from 'axios'
-import { ref } from 'vue'
+import { onMounted, ref } from 'vue'
 import MessageItemVue from '@/views/Conversation/MessageItemView.vue'
 import type {Message} from "@/models/message";
 import useConversationStore from '@/store/conversationStore'
@@ -14,20 +14,8 @@ const socketStore = useSocketStore()
 
 
 onMounted(() => {
-  socketStore.watchNewMessage(handleNewMessageSocket)
-  socketStore.watchMessageDeleted(handleMessageDeleted)
-  socketStore.watchMessageEdited(handleMessageEdited)
-})
 
-function handleNewMessageSocket(convId: string, message: Message) {
- conversationStore.addMessageToConversation(message)
-}
-function handleMessageDeleted(messId: string, message: Message) {
- conversationStore.deleteMessageInConv(messId)
-}
-function handleMessageEdited(messId: string, message: Message) {
- conversationStore.editMessage(messId, message)
-}
+})
 function closeConversation() {
   conversationStore.showConversation = false
 }
@@ -43,6 +31,9 @@ function getMessages(): Message[] {
   return getConversation().messages;
 }
 
+function replyToMessage(message: Message) {
+  // conversationStore.messageReplied = message
+}
 function sendMessage() {
   axios
     .post(
@@ -81,7 +72,7 @@ function sendMessage() {
     </div>
     <div class="pt-5"></div>
     <MessageItemVue
-      v-for="message in messageList"
+      v-for="message in getMessages()"
       :key="message._id"
       :message="message"
       @replyToMessage="replyToMessage($event)"
@@ -89,12 +80,12 @@ function sendMessage() {
 
     <div class="bg-white p-4 shadow-md rounded-lg flex relative bottom-0 mt-5">
       <div class="flex flex-col w-full">
-        <div v-if="messageReplied">
-          <span style="background: deepskyblue">Replying to: {{ messageReplied.content }}</span>
-          <button @click="deleteReply">
-            <FontAwesomeIcon :icon="['fas', 'circle-xmark']" />
-          </button>
-        </div>
+<!--        <div v-if="messageReplied">-->
+<!--          <span style="background: deepskyblue">Replying to: {{ messageReplied.content }}</span>-->
+<!--          <button @click="deleteReply">-->
+<!--            <FontAwesomeIcon :icon="['fas', 'circle-xmark']" />-->
+<!--          </button>-->
+<!--        </div>-->
         <div class="flex">
           <input
             type="text"

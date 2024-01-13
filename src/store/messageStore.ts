@@ -4,6 +4,7 @@ import type { Message } from '@/models/message'
 
 const useMessageStore = defineStore('messageStore', () => {
   const messsageList = ref<Message[]>([])
+  const showReaction = ref<boolean>(false)
 
   function setMessages(messages: Message[]): void {
     messsageList.value = messages
@@ -29,12 +30,18 @@ const useMessageStore = defineStore('messageStore', () => {
     return message[0] ?? null
   }
 
+  function showReactionBar(): boolean {
+    return showReaction.value
+  }
+
   return {
     setMessages,
     addMessage,
     editMessage,
     getMessages,
-    getMessageById
+    getMessageById,
+    showReactionBar,
+    showReaction
   }
 })
 
