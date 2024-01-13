@@ -45,7 +45,6 @@ const useUserStore = defineStore('userStore', () => {
 
   function getUserProfilPicIdById(id : string): string| null{
     const user = users.value.find((user) => user._id === id)
-    console.log(id, user)
     if (user){
       return user.profilePicId
     }

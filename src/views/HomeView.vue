@@ -8,6 +8,7 @@ import UserListView from './UserListView.vue'
 import useUserStore from '@/store/userStore'
 import useConversationStore from '@/store/conversationStore'
 import router from '@/router'
+import useMessageStore from "@/store/messageStore";
 
 //const router = useRouter()
 
@@ -15,6 +16,7 @@ import router from '@/router'
 
 const userStore = useUserStore()
 const conversationStore = useConversationStore()
+const messageStore = useMessageStore()
 
 const selectedConversation = ref()
 const showConversation = ref(false)
@@ -48,6 +50,7 @@ function addConversationToList(conversation: Conversation) {
 function openConversation(conversation: Conversation) {
   showConversation.value = true
   selectedConversation.value = conversation
+    messageStore.setMessages(conversation.messages)
 }
 
 function changeView() {
@@ -80,7 +83,7 @@ async function deleteConversation(conversation: Conversation) {
   <main class="h-screen">
     <div class="flex flex-row h-screen">
       <div class="flex-col w-1/3 max-w-[500px]">
-        <div class="bg-white p-4 shadow-md rounded-lg h-[100px]">
+        <div class="bg-white p-4 shadow-md rounded-lg">
           <div class="flex items-center">
             <img
               :src="`https://source.unsplash.com/userid/100x100`"
@@ -92,14 +95,18 @@ async function deleteConversation(conversation: Conversation) {
               <span class="text-green-500">Online</span>
             </div>
           </div>
+          <div class="flex flex-col">
+            <h1 class="pt-4 pb-2 text-xl font-bold">Conversations</h1>
+            <ConversationItemView
+              v-for="conversation in conversationStore.getConversations()"
+              :key="conversation._id"
+              :conversation="conversation"
+              @openConv="openConversation($event)"
+            ></ConversationItemView>
+          </div>
         </div>
-        <ConversationItemView
-          v-for="conversation in conversationStore.getConversations()"
-          :key="conversation._id"
-          :conversation="conversation"
-          @openConv="openConversation($event)"
-        ></ConversationItemView>
       </div>
+
       <div class="w-2/3 h-full px-4">
         <UserListView
           v-if="!showConversation"

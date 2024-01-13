@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { Conversation } from '@/models/conversation'
 import axios from 'axios'
-import { onMounted, ref } from 'vue'
+import { ref } from 'vue'
 import MessageItemVue from '@/views/Conversation/MessageItemView.vue'
 import type { Message } from '@/models/message'
 import useMessageStore from '@/store/messageStore'
@@ -18,11 +18,8 @@ const messageStore = useMessageStore()
 const messageContent = ref<string>('')
 const messageReplied = ref<Message | null>(null)
 
-onMounted(() => {
-  messageStore.setMessages(props.conversation.messages)
-})
-
 function closeConversation(): void {
+    console.log(props.conversation.messages)
   emit('changeView')
 }
 
