@@ -101,20 +101,31 @@ const useConversationStore = defineStore('conversationStore', () => {
     return false
   }
 
-  function addMessageToConversation(convId: string, message: Message): void {
-    if(!messageExistInConversation(convId, message._id)) return
-    const index : number = conversationList.value.findIndex((conversation : Conversation) : boolean => {
-      return conversation._id === convId
+  function addMessageToConversation(message: Message): void {
+    if(messageExistInConversation(message.conversationId, message._id)) return
+    getSelectedConversation().messages.push(message)
+  }
+  function deleteMessageInConv( msgId: string): void {
+    const conversation = getSelectedConversation()
+    const message: Message | undefined = conversation.messages.find((message : Message) : boolean => {
+      return message._id === msgId
     })
-    if (index !== -1) {
-      conversationList.value[index].messages.push(message)
+    if(message) {
+      message.deleted = true
+    }
+  }
+  function editMessage (msgId: string, editedMessage: Message): void {
+    const conversation = getSelectedConversation()
+    const message: Message | undefined = conversation.messages.find((message : Message) : boolean => {
+      return message._id === msgId
+    })
+    if(message) {
+      message.content = editedMessage.content
     }
   }
 
   function messageExistInConversation(convId: string, msgId: string): boolean {
-    const conversation = conversationList.value.find((conversation : Conversation) : boolean => {
-      return conversation._id === convId
-    })
+    const conversation = getSelectedConversation()
     if (conversation) {
       const index : number = conversation.messages.findIndex((message : Message) : boolean => {
         return message._id === msgId
@@ -143,7 +154,9 @@ const useConversationStore = defineStore('conversationStore', () => {
     showConversation,
     openConversation,
     deleteConversationById,
-    addMessageToConversation
+    addMessageToConversation,
+    deleteMessageInConv,
+    editMessage
   }
 })
 

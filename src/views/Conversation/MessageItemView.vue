@@ -17,6 +17,7 @@ onMounted(() => {
   message.value = props.message
 })
 
+
 function isCurrentUser(): boolean {
   return props.message.from === (JSON.parse(localStorage.getItem('user')) as User)._id
 }
@@ -31,7 +32,7 @@ async function deleteMessage() {
       }
     })
     .then((response) => {
-      message.value = response.data.message
+      message.value.deleted = true
     })
     .catch((error) => console.log(error))
 }

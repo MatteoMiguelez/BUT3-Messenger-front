@@ -7,11 +7,6 @@ import type {Message} from "@/models/message";
 import useConversationStore from '@/store/conversationStore'
 import useSocketStore from '@/store/socketStore'
 
-const props = defineProps<{
-  conversation: Conversation
-}>()
-
-const messageList = ref<Message[]>([])
 const message = ref('')
 const conversationStore = useConversationStore()
 const socketStore = useSocketStore()
@@ -19,27 +14,39 @@ const socketStore = useSocketStore()
 
 
 onMounted(() => {
-  messageList.value = props.conversation.messages
   socketStore.watchNewMessage(handleNewMessageSocket)
+  socketStore.watchMessageDeleted(handleMessageDeleted)
+  socketStore.watchMessageEdited(handleMessageEdited)
 })
 
 function handleNewMessageSocket(convId: string, message: Message) {
- conversationStore.addMessageToConversation(convId, message)
-  messageList.value.push(message)
+ conversationStore.addMessageToConversation(message)
+}
+function handleMessageDeleted(messId: string, message: Message) {
+ conversationStore.deleteMessageInConv(messId)
+}
+function handleMessageEdited(messId: string, message: Message) {
+ conversationStore.editMessage(messId, message)
 }
 function closeConversation() {
   conversationStore.showConversation = false
 }
 
 async function deleteConversation() {
-  await conversationStore.deleteConversationById(props.conversation._id)
+  await conversationStore.deleteConversationById(getConversation()._id)
 }
 
+function getConversation(): Conversation {
+  return conversationStore.getSelectedConversation();
+}
+function getMessages(): Message[] {
+  return getConversation().messages;
+}
 
 function sendMessage() {
   axios
     .post(
-      `http://localhost:${import.meta.env.VITE_PORT}/conversations/` + props.conversation._id,
+      `http://localhost:${import.meta.env.VITE_PORT}/conversations/` + getConversation()._id,
       {
         messageContent: message.value
       },
@@ -50,15 +57,14 @@ function sendMessage() {
       }
     )
     .then((response) => {
-        messageList.value.push(response.data.message as Message)
-        message.value = ''
+      conversationStore.addMessageToConversation(response.data.message as Message)
     })
     .catch((error) => console.log(error))
 }
 </script>
 <template>
   <div class="relative flex flex-col h-full p-4">
-    <h2 class="text-3xl">{{ props.conversation.title }}</h2>
+    <h2 class="text-3xl">{{ getConversation().title }}</h2>
     <div>
       <button
         @click="deleteConversation"
@@ -85,7 +91,7 @@ function sendMessage() {
     </div>
     <div class="pt-5"></div>
     <MessageItemVue
-      v-for="message in messageList"
+      v-for="message in getMessages()"
       :key="message._id"
       :message="message"
     ></MessageItemVue>

@@ -84,7 +84,6 @@ async function handleConnectedUser() {
         ></UserListView>
         <ConversationView
           v-else
-          :conversation="getSelectedConversation()"
         ></ConversationView>
       </div>
     </div>
