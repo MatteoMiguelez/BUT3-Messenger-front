@@ -24,7 +24,7 @@ const useMessageStore = defineStore('messageStore', () => {
     return messsageList.value
   }
 
-  function getUserIdByMessageId(id: string): Message | null {
+  function getMessageById(id: string): Message | null {
     const message: Message[] = messsageList.value.filter((message: Message) => message._id === id)
     return message[0] ?? null
   }
@@ -34,7 +34,7 @@ const useMessageStore = defineStore('messageStore', () => {
     addMessage,
     editMessage,
     getMessages,
-    getUserIdByMessageId
+    getMessageById
   }
 })
 

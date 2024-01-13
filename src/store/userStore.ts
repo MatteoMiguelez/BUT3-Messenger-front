@@ -38,12 +38,21 @@ const useUserStore = defineStore('userStore', () => {
     }
     const user = users.value.filter((user: User) => user._id === id)[0]
     if (user){
-      return user._id
+      return user.username
     }
     return null
   }
 
-  return { setConnectedUser, getConnectedUser, setUsers, getUsers, addUser, getUserNameById }
+  function getUserProfilPicIdById(id : string): string| null{
+    const user = users.value.find((user) => user._id === id)
+    console.log(id, user)
+    if (user){
+      return user.profilePicId
+    }
+    return null
+  }
+
+  return { setConnectedUser, getConnectedUser, setUsers, getUsers, addUser, getUserNameById, getUserProfilPicIdById}
 })
 
 export default useUserStore
