@@ -95,7 +95,14 @@ const submitForm = async () => {
       localStorage.setItem('token', response.data.token)
       localStorage.setItem('user', JSON.stringify(response.data.user))
       socketStore.login(response.data.user as User)
+      socketStore.watchNewUser(handleConnectionSocket)
     })
     .catch((error) => console.log(error))
 }
+
+function handleConnectionSocket(user: User) {
+  userStore.fetchUsers()
+  userStore.fetchConnectedUsers()
+}
+
 </script>

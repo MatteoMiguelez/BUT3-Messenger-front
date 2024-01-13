@@ -69,7 +69,7 @@ const useSocketStore = defineStore('socketStore', () => {
     if (!_isLoggedIn()) {
       throw new Error('Cannot call socket without logging in first.');
     }
-    state.socket?.on('new_user', cb)
+    state.socket?.on('@onConnected', cb)
   }
 
   function watchNewMessage(cb: (conversationId: string, message: Message) => void): void {

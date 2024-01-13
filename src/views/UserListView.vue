@@ -9,24 +9,20 @@ import useUserStore from '@/store/userStore'
 import useConversationStore from '@/store/conversationStore'
 
 const selectedUsersIds = ref<Array<string>>([])
-const userList = ref<User[]>([])
 
 const emit = defineEmits(['createConv', 'existingConv'])
 
 const userStore = useUserStore()
 const conversationStore = useConversationStore()
 
-onMounted(async () => {
-  await axios
-    .get(`http://localhost:${import.meta.env.VITE_PORT}/users/all`)
-    .then((response: AxiosResponse) => {
-      const result = response.data.users
-      if (result) {
-        userList.value = result.filter((user) => user._id != userStore.getConnectedUser()?._id)
-      }
-    })
-})
 
+onMounted(async () => {
+  await userStore.fetchUsers();
+  await userStore.fetchConnectedUsers();
+})
+function getUserList(): User[] {
+  return userStore.getUsers().filter((user) => user._id !== userStore.getConnectedUser()?._id)
+}
 function isUserSelected(userId: string): boolean {
   return selectedUsersIds.value.findIndex((id) => id === userId) !== -1
 }
@@ -109,7 +105,7 @@ function getExistingConversationByUsers(): Conversation | undefined {
   </button>
   <div class="flex flew-row flex-wrap gap-2">
     <UserItem
-      v-for="user in userList"
+      v-for="user in getUserList()"
       :key="user._id"
       :selected="isUserSelected(user._id)"
       :user="user"
