@@ -27,6 +27,7 @@ const usernameOfRespondedMessage = ref<string>('')
 const repliedMessageContent = ref<string>('')
 const usernameReplyTo = ref<string>('')
 const reactions = ref<Reaction[]>([])
+const seenProfilPicsList = ref<string[]>([])
 
 const op = ref()
 
@@ -57,6 +58,13 @@ onMounted(() => {
   }
 
   setExistingReactionList()
+  const usersSeenId = conversationStore.userListOfSeenForMessage(messageItem.value._id)
+  usersSeenId.forEach((userId) => {
+    const profilePic = userStore.getUserProfilPicIdById(userId)
+    if (profilePic) {
+      seenProfilPicsList.value.push(profilePic)
+    }
+  })
 })
 
 function setExistingReactionList() {
@@ -218,6 +226,17 @@ function closeReactionsButtons(updatedMessage: Message) {
             <span v-if="reaction.number > 1">{{ reaction.number }}</span>
             {{ reaction.emoji }}
           </Tag>
+        </li>
+      </ul>
+    </div>
+    <div v-if="seenProfilPicsList.length > 0" class="pt-2">
+      <ul class="flex" :class="isCurrentUser ? 'justify-end' : ''">
+        <li v-for="profilePic of seenProfilPicsList" :key="profilePic">
+          <img
+            class="w-6 h-6 mb-3 rounded-full shadow-lg me-3"
+            :src="'https://source.unsplash.com/' + profilePic + '/100x100'"
+            alt="Bonnie image"
+          />
         </li>
       </ul>
     </div>

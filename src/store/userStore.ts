@@ -17,10 +17,6 @@ const useUserStore = defineStore('userStore', () => {
     return connectedUsers.value
   }
 
-  function getUsers(): User[] {
-    return users.value
-  }
-
   async function fetchUsers(): Promise<void> {
     await axios
       .get(`http://localhost:${import.meta.env.VITE_PORT}/users/all`)
@@ -64,6 +60,10 @@ const useUserStore = defineStore('userStore', () => {
     return state.connectedUser
   }
 
+  function getUsers(): User[] {
+    return users.value.filter((user) => user._id !== state.connectedUser?._id)
+  }
+
   function addUser(user: User): void {
     if (users.value.includes(user)) return
     users.value.push(user)
@@ -82,6 +82,10 @@ const useUserStore = defineStore('userStore', () => {
   }
 
   function getUserProfilPicIdById(id: string): string | null {
+    const connectedUser: User | null = getConnectedUser()
+    if (connectedUser && connectedUser._id === id) {
+      return connectedUser.profilePicId
+    }
     const user = users.value.find((user) => user._id === id)
     if (user) {
       return user.profilePicId

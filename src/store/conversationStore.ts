@@ -137,6 +137,41 @@ const useConversationStore = defineStore('conversationStore', () => {
     return false
   }
 
+  async function addSeenToConversation(conversationId: string, messageId: string) {
+    await axios
+      .post(
+        `http://localhost:${import.meta.env.VITE_PORT}/conversations/see/` + conversationId,
+        {
+          messageId: messageId
+        },
+        {
+          headers: {
+            Authorization: localStorage.getItem('token')
+          }
+        }
+      )
+      .then((response) => {
+        if (response.data.conversation) {
+          selectedConversation.value = response.data.conversation
+        }
+      })
+      .catch((error) => console.log(error))
+  }
+
+  function userListOfSeenForMessage(messageId: string) {
+    const matchingUserIds: string[] = []
+
+    if (selectedConversation.value) {
+      for (const userId in selectedConversation.value.seen) {
+        if (selectedConversation.value.seen[userId] === messageId) {
+          matchingUserIds.push(userId)
+        }
+      }
+    }
+
+    return matchingUserIds
+  }
+
   function getConversations(): Conversation[] {
     return conversationList.value
   }
@@ -156,16 +191,18 @@ const useConversationStore = defineStore('conversationStore', () => {
     deleteConversation,
     fetchConversations,
     createConversation,
+    showConversation,
     conversationExist,
     setSelectedConversation,
     getSelectedConversation,
-    showConversation,
     openConversation,
     deleteConversationById,
     addMessageToConversation,
     deleteMessageInConv,
     editMessage,
-    getMessageById
+    getMessageById,
+    addSeenToConversation,
+    userListOfSeenForMessage
   }
 })
 
