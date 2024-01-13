@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { User } from '@/models/user'
+import useUserStore from '@/store/userStore'
 
 const props = defineProps<{
   user: User
@@ -7,7 +8,10 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits(['select'])
-
+const userStore = useUserStore()
+function isConnected() {
+  return userStore.isConnected(props.user._id);
+}
 function selectUser(userId: string) {
   emit('select', userId)
 }
@@ -30,7 +34,7 @@ function selectUser(userId: string) {
         />
         <span
           class="top-0 left-16 absolute w-6 h-6 border-2 border-white rounded-full"
-          :class="{ 'bg-red-500': true, 'bg-green-500': false }"
+          :class="{ 'bg-red-500': !isConnected, 'bg-green-500': isConnected }"
         ></span>
       </div>
       <span class="text-lg text-center">{{ user.username }}</span>

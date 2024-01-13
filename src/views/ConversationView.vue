@@ -1,33 +1,55 @@
 <script setup lang="ts">
 import type { Conversation } from '@/models/conversation'
 import axios from 'axios'
-import { ref } from 'vue'
+import { onMounted, ref } from 'vue'
 import MessageItemVue from '@/views/Conversation/MessageItemView.vue'
 import type { Message } from '@/models/message'
-import useMessageStore from '@/store/messageStore'
+import useConversationStore from '@/store/conversationStore'
+import useSocketStore from '@/store/socketStore'
 import type { MessageBody } from '@/models/messageBody'
+import {FontAwesomeIcon} from "@fortawesome/vue-fontawesome";
 
-const props = defineProps<{
-  conversation: Conversation
-}>()
+const conversationStore = useConversationStore()
+const socketStore = useSocketStore()
 
-const emit = defineEmits(['changeView', 'deleteConv'])
-
-const messageStore = useMessageStore()
-
-const messageContent = ref<string>('')
+const messageContent = ref('')
 const messageReplied = ref<Message | null>(null)
 
-function closeConversation(): void {
-    console.log(props.conversation.messages)
-  emit('changeView')
+onMounted(() => {
+  socketStore.watchNewMessage(handleNewMessageSocket)
+  socketStore.watchMessageDeleted(handleMessageDeleted)
+  socketStore.watchMessageEdited(handleMessageEdited)
+})
+
+function handleNewMessageSocket(convId: string, message: Message) {
+  conversationStore.addMessageToConversation(message)
+}
+function handleMessageDeleted(messId: string, message: Message) {
+  conversationStore.deleteMessageInConv(messId)
+}
+function handleMessageEdited(messId: string, message: Message) {
+  conversationStore.editMessage(messId, message)
+}
+function closeConversation() {
+  conversationStore.showConversation = false
 }
 
-function deleteConversation(): void {
-  emit('deleteConv', props.conversation)
+async function deleteConversation() {
+  await conversationStore.deleteConversationById(getConversation()._id)
 }
 
-function sendMessage(): void {
+function getConversation(): Conversation {
+  return conversationStore.getSelectedConversation()
+}
+function getMessages(): Message[] {
+  return getConversation().messages
+}
+
+function replyToMessage(message: Message): void {
+  messageReplied.value = message
+}
+
+function sendMessage() {
   let corps: MessageBody = {
     messageContent: messageContent.value
   }
@@ -36,7 +58,7 @@ function sendMessage(): void {
   }
   axios
     .post(
-      `http://localhost:${import.meta.env.VITE_PORT}/conversations/` + props.conversation._id,
+      `http://localhost:${import.meta.env.VITE_PORT}/conversations/` + getConversation()._id,
       corps,
       {
         headers: {
@@ -47,16 +69,12 @@ function sendMessage(): void {
     .then((response) => {
       const createdMessage: Message = response.data.message
       if (createdMessage) {
-        messageStore.addMessage(createdMessage)
+        conversationStore.addMessageToConversation(createdMessage)
       }
       messageContent.value = ''
       messageReplied.value = null
     })
     .catch((error) => console.log(error))
-}
-
-function replyToMessage(message: Message): void {
-  messageReplied.value = message
 }
 
 function deleteReply(): void {
@@ -65,24 +83,24 @@ function deleteReply(): void {
 </script>
 <template>
   <div class="relative flex flex-col h-full p-4">
-    <h2 class="text-3xl">{{ props.conversation.title }}</h2>
+    <h2 class="text-3xl">{{ getConversation().title }}</h2>
     <div>
       <button
         @click="deleteConversation"
         class="absolute w-9 h-9 top-2 right-14 bg-red-600 hover:bg-red-700 p-2 rounded-full"
       >
-        <FontAwesomeIcon :icon="['fas', 'trash']" />
+          <FontAwesomeIcon :icon="['fas', 'trash']" />
       </button>
       <button
         @click="closeConversation"
         class="absolute w-9 h-9 top-2 right-2 bg-gray-200 hover:bg-gray-300 p-2 rounded-full"
       >
-        <FontAwesomeIcon :icon="['fas', 'xmark']" />
+          <FontAwesomeIcon :icon="['fas', 'xmark']" />
       </button>
     </div>
     <div class="pt-5"></div>
     <MessageItemVue
-      v-for="message in messageStore.getMessages()"
+      v-for="message in getMessages()"
       :key="message._id"
       :message="message"
       @replyToMessage="replyToMessage($event)"

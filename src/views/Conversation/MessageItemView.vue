@@ -2,7 +2,7 @@
 import type { Message } from '@/models/message'
 import axios from 'axios'
 import { computed, onMounted, ref } from 'vue'
-import useMessageStore from '@/store/messageStore'
+import useConversationStore from '@/store/conversationStore'
 import useUserStore from '@/store/userStore'
 import MessageReaction from '@/components/message/MessageReactionButtons.vue'
 import { REACTION_EMOJI_MAP } from '@/models/message'
@@ -17,7 +17,7 @@ const props = defineProps<{
 
 const emit = defineEmits(['replyToMessage'])
 
-const messageStore = useMessageStore()
+const conversationStore = useConversationStore()
 const userStore = useUserStore()
 
 const messageItem = ref<Message>(props.message)
@@ -40,7 +40,7 @@ const toggleReactionButton = (event) => {
 
 onMounted(() => {
   if (props.message.replyTo) {
-    const repliedMessage = messageStore.getMessageById(props.message.replyTo)
+    const repliedMessage = conversationStore.getMessageById(props.message.replyTo)
     if (repliedMessage) {
       const username = userStore.getUserNameById(repliedMessage.from)
       repliedMessageContent.value = !repliedMessage.deleted
@@ -161,20 +161,10 @@ function closeReactionsButtons(updatedMessage: Message) {
           @keyup.enter="editMessage"
         />
         <button @click="editMessage">
-          <svg xmlns="http://www.w3.org/2000/svg" height="16" width="14" viewBox="0 0 448 512">
-            <!--!Font Awesome Free 6.5.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2024 Fonticons, Inc.-->
-            <path
-              d="M438.6 105.4c12.5 12.5 12.5 32.8 0 45.3l-256 256c-12.5 12.5-32.8 12.5-45.3 0l-128-128c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0L160 338.7 393.4 105.4c12.5-12.5 32.8-12.5 45.3 0z"
-            />
-          </svg>
+          <FontAwesomeIcon :icon="['fas', 'check']" />
         </button>
         <button @click="closeEdition">
-          <svg xmlns="http://www.w3.org/2000/svg" height="16" width="12" viewBox="0 0 384 512">
-            <!--!Font Awesome Free 6.5.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2024 Fonticons, Inc.-->
-            <path
-              d="M342.6 150.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L192 210.7 86.6 105.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L146.7 256 41.4 361.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L192 301.3 297.4 406.6c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L237.3 256 342.6 150.6z"
-            />
-          </svg>
+          <FontAwesomeIcon :icon="['fas', 'xmark']" />
         </button>
       </div>
       <div v-else class="flex" :class="isCurrentUser ? 'justify-end' : ''">
@@ -195,11 +185,15 @@ function closeReactionsButtons(updatedMessage: Message) {
           <p v-if="!messageItem.deleted">{{ messageItem.content }}</p>
           <p v-else class="italic">Message supprimé</p>
         </div>
-        <div class="flex" :class="isCurrentUser ? 'order-1' : 'order-2'">
-          <button v-if="isCurrentUser && !messageItem.deleted" @click="deleteMessage" class="pe-2">
+        <div
+          v-if="!messageItem.deleted"
+          class="flex"
+          :class="isCurrentUser ? 'order-1' : 'order-2'"
+        >
+          <button v-if="isCurrentUser" @click="deleteMessage" class="pe-2">
             <FontAwesomeIcon :icon="['fas', 'trash']" />
           </button>
-          <button v-if="isCurrentUser && !messageItem.deleted" @click="edition = true" class="pe-2">
+          <button v-if="isCurrentUser" @click="edition = true" class="pe-2">
             <FontAwesomeIcon :icon="['fas', 'pen']" />
           </button>
           <button @click="toggleReactionButton" class="pe-2">
