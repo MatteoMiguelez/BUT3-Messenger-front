@@ -4,6 +4,7 @@ import axios from 'axios'
 import {onMounted, ref} from 'vue'
 import MessageItemVue from '@/views/Conversation/MessageItemView.vue'
 import type {Message} from "@/models/message";
+import useConversationStore from '@/store/conversationStore'
 
 const props = defineProps<{
   conversation: Conversation
@@ -11,16 +12,16 @@ const props = defineProps<{
 
 const messageList = ref<Message[]>([])
 const message = ref('')
+const conversationStore = useConversationStore()
 
-const emit = defineEmits(['changeView', 'deleteConv'])
+const emit = defineEmits(['deleteConv'])
 
 onMounted(() => {
-    console.log(props.conversation)
     messageList.value = props.conversation.messages
 })
 
 function closeConversation() {
-  emit('changeView')
+  conversationStore.showConversation = false
 }
 
 function deleteConversation() {

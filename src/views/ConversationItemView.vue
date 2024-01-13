@@ -1,14 +1,14 @@
 <script setup lang="ts">
 import type { Conversation } from '@/models/conversation'
+import useConversationStore from '@/store/conversationStore'
 
 const props = defineProps<{
   conversation: Conversation
 }>()
 
-const emit = defineEmits(['openConv'])
-
+const conversationStore = useConversationStore()
 function openConv(conversation: Conversation) {
-  emit('openConv', conversation)
+  conversationStore.openConversation(conversation)
 }
 
 function dateToString(date: Date) {

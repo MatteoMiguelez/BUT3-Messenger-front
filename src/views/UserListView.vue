@@ -3,23 +3,27 @@ import { onMounted, ref } from 'vue'
 import { twMerge } from 'tailwind-merge'
 import type { User } from '@/models/user'
 import UserItem from './UserItem.vue'
-import axios, { AxiosResponse } from 'axios'
 import type { Conversation } from '@/models/conversation'
 import useUserStore from '@/store/userStore'
 import useConversationStore from '@/store/conversationStore'
+import useSocketStore from '@/store/socketStore'
 
 const selectedUsersIds = ref<Array<string>>([])
 
-const emit = defineEmits(['createConv', 'existingConv'])
 
 const userStore = useUserStore()
 const conversationStore = useConversationStore()
-
+const socketStore = useSocketStore()
 
 onMounted(async () => {
   await userStore.fetchUsers();
   await userStore.fetchConnectedUsers();
+  socketStore.watchNewUser(handleConnectionSocket)
 })
+function handleConnectionSocket(user: User) {
+  userStore.fetchUsers()
+  userStore.fetchConnectedUsers()
+}
 function getUserList(): User[] {
   return userStore.getUsers().filter((user) => user._id !== userStore.getConnectedUser()?._id)
 }
@@ -28,7 +32,7 @@ function isUserSelected(userId: string): boolean {
 }
 
 function createdConversation(conversation: Conversation): void {
-  emit('existingConv', conversation)
+  conversationStore.openConversation(conversation)
 }
 
 function selectUser(userId: string): void {
@@ -42,27 +46,10 @@ function selectUser(userId: string): void {
 
 const createConversation = async () => {
   const existingConversation = getExistingConversationByUsers()
-
   if (existingConversation) {
     createdConversation(existingConversation)
   } else {
-    await axios
-      .post(
-        `http://localhost:${import.meta.env.VITE_PORT}/conversations`,
-        { concernedUsersIds: selectedUsersIds.value },
-        {
-          headers: {
-            Authorization: localStorage.getItem('token')
-          }
-        }
-      )
-      .then((response) => {
-        selectedUsersIds.value = []
-        conversationStore.addConversation(response.data.conversation)
-      })
-      .catch((error) => {
-        return error
-      })
+    await conversationStore.createConversation(selectedUsersIds.value)
   }
 }
 
