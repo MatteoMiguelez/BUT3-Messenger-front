@@ -3,7 +3,7 @@ import type { Conversation } from '@/models/conversation'
 import useConversationStore from '@/store/conversationStore'
 import Card from 'primevue/card'
 import useUserStore from '@/store/userStore'
-import {computed} from "vue";
+import { computed } from 'vue'
 
 const props = defineProps<{
   conversation: Conversation
@@ -11,12 +11,17 @@ const props = defineProps<{
 
 const userStore = useUserStore()
 const isCurrentConversation = computed<boolean>(() => {
-    return conversationStore.getSelectedConversation() ? conversationStore.getSelectedConversation()._id === props.conversation._id : false
+  return conversationStore.getSelectedConversation()
+    ? conversationStore.getSelectedConversation()._id === props.conversation._id
+    : false
 })
 
 const conversationStore = useConversationStore()
 function openConv(conversation: Conversation) {
   conversationStore.openConversation(conversation)
+  conversationStore.addSeenToConversation(
+    conversation.messages[conversation.messages.length - 1]._id
+  )
 }
 
 function getUsername(id: string): string | null {
@@ -33,11 +38,7 @@ function dateToString(date: Date) {
     <template #content>
       <div
         class="flex py-2 px-5 pt-5 cursor-pointer bg-white"
-        :class="
-            isCurrentConversation
-            ? 'bg-slate-100 rounded-lg'
-            : ''
-        "
+        :class="isCurrentConversation ? 'bg-slate-100 rounded-lg' : ''"
         @click="openConv(props.conversation)"
       >
         <img
@@ -49,7 +50,10 @@ function dateToString(date: Date) {
         <div class="flex flex-col">
           <span class="font-semibold">{{ conversation.title }}</span>
           <span class="text-sm italic">{{ dateToString(props.conversation.lastUpdate) }}</span>
-          <span class="text-sm italic">{{ getUsername(conversation.messages[conversation.messages.length-1].from)}}: {{ conversation.messages[conversation.messages.length-1].content}}</span>
+          <span class="text-sm italic" v-if="conversation.messages.length > 0"
+            >{{ getUsername(conversation.messages[conversation.messages.length - 1]?.from) }}:
+            {{ conversation.messages[conversation.messages.length - 1]?.content }}</span
+          >
         </div>
       </div>
     </template>

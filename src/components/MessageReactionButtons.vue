@@ -1,12 +1,15 @@
 <script setup lang="ts">
 import axios from 'axios'
 import { REACTION_EMOJI_MAP } from '@/models/message'
+import useConversationStore from '@/store/conversationStore'
 
 const props = defineProps<{
   id: string
 }>()
 
 const emit = defineEmits(['closeReactionsButtons'])
+
+const conversationStore = useConversationStore()
 
 async function addReaction(reactionName: string) {
   await axios
@@ -21,6 +24,7 @@ async function addReaction(reactionName: string) {
     )
     .then((response) => {
       if (response.data.message) {
+        conversationStore.editMessage(response.data.message._id, response.data.message)
         emit('closeReactionsButtons', response.data.message)
       }
     })

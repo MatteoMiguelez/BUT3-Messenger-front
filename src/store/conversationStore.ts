@@ -7,7 +7,6 @@ import type { Message, Reactions } from '@/models/message'
 import { REACTION_EMOJI_MAP } from '@/models/message'
 import type { Reaction } from '@/models/reaction'
 
-
 const useConversationStore = defineStore('conversationStore', () => {
   const conversationList = ref<Conversation[]>([])
   const showConversation = ref<boolean>(false)
@@ -168,10 +167,10 @@ const useConversationStore = defineStore('conversationStore', () => {
     return false
   }
 
-  async function addSeenToConversation(conversationId: string, messageId: string) {
+  async function addSeenToConversation(messageId: string) {
     await axios
       .post(
-        `http://localhost:${import.meta.env.VITE_PORT}/conversations/see/` + conversationId,
+        `http://localhost:${import.meta.env.VITE_PORT}/conversations/see/` + getSelectedConversation()._id,
         {
           messageId: messageId
         },
@@ -183,7 +182,7 @@ const useConversationStore = defineStore('conversationStore', () => {
       )
       .then((response) => {
         if (response.data.conversation) {
-          selectedConversation.value = response.data.conversation
+          setSelectedConversation(response.data.conversation)
         }
       })
       .catch((error) => console.log(error))
@@ -236,6 +235,18 @@ const useConversationStore = defineStore('conversationStore', () => {
     return null
   }
 
+  function getSeenListByMessageId(messageId: string): string[]{
+    const userIds: string[] = [];
+
+    for (const [userId, msgId] of Object.entries(getSelectedConversation().seen)) {
+      if (msgId === messageId) {
+        userIds.push(userId);
+      }
+    }
+
+    return userIds;
+  }
+
   return {
     setConversations,
     getConversations,
@@ -256,7 +267,8 @@ const useConversationStore = defineStore('conversationStore', () => {
     addSeenToConversation,
     addReactionToMessage,
     userListOfSeenForMessage,
-    setExistingReactionList
+    setExistingReactionList,
+    getSeenListByMessageId
   }
 })
 

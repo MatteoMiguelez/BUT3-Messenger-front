@@ -13,6 +13,7 @@ import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
 
 const props = defineProps<{
   message: Message
+  seenList: string[]
 }>()
 
 const emit = defineEmits(['replyToMessage'])
@@ -27,11 +28,10 @@ const usernameOfRespondedMessage = ref<string>('')
 const repliedMessageContent = ref<string>('')
 const usernameReplyTo = ref<string>('')
 const reactions = ref<Reaction[]>([])
-const seenProfilPicsList = ref<string[]>([])
 
 const op = ref()
-function getReactionAsEmoji(value : typeof ALL_REACTIONS): string{
-  return REACTION_EMOJI_MAP[value];
+function getReactionAsEmoji(value: typeof ALL_REACTIONS): string {
+  return REACTION_EMOJI_MAP[value]
 }
 const isCurrentUser = computed(() => {
   return messageItem.value.from === userStore.getConnectedUser()?._id
@@ -60,17 +60,10 @@ onMounted(() => {
   }
 
   setExistingReactionList()
-  const usersSeenId = conversationStore.userListOfSeenForMessage(messageItem.value._id)
-  usersSeenId.forEach((userId) => {
-    const profilePic = userStore.getUserProfilPicIdById(userId)
-    if (profilePic) {
-      seenProfilPicsList.value.push(profilePic)
-    }
-  })
 })
 
 function setExistingReactionList() {
-  conversationStore.setExistingReactionList(messageItem.value.reactions, reactions.value )
+  conversationStore.setExistingReactionList(messageItem.value.reactions, reactions.value)
 }
 
 function reply(): void {
@@ -132,7 +125,7 @@ function closeReactionsButtons(updatedMessage: Message) {
         v-if="messageItem.edited && !messageItem.deleted"
         class="flex text-xs italic text-slate-500"
         :class="isCurrentUser ? 'justify-end' : ''"
-        :style="isCurrentUser ? '': 'padding-left:45px'"
+        :style="isCurrentUser ? '' : 'padding-left:45px'"
       >
         Edited
       </div>
@@ -140,17 +133,17 @@ function closeReactionsButtons(updatedMessage: Message) {
         v-if="messageItem.replyTo"
         class="flex text-xs flex-col"
         :class="isCurrentUser ? 'justify-end items-end' : ''"
-        :style="isCurrentUser ? '': 'padding-left:45px'"
+        :style="isCurrentUser ? '' : 'padding-left:45px'"
       >
         <div>
           <FontAwesomeIcon :icon="['fas', 'reply']" class="pe-1 pt-1" />
           {{ usernameOfRespondedMessage }} a répondu à {{ usernameReplyTo }}
         </div>
-          <div>
-            <p class="w-fit	py-1 px-2 rounded-lg bg-cyan-200">
-          {{ repliedMessageContent }}
-        </p>
-          </div>
+        <div>
+          <p class="w-fit py-1 px-2 rounded-lg bg-cyan-200">
+            {{ repliedMessageContent }}
+          </p>
+        </div>
       </div>
       <div
         v-if="edition"
@@ -215,7 +208,11 @@ function closeReactionsButtons(updatedMessage: Message) {
       </div>
     </div>
     <div>
-      <ul class="flex" :class="{ 'justify-end': isCurrentUser }" :style="isCurrentUser ? '': 'padding-left:45px'">
+      <ul
+        class="flex"
+        :class="{ 'justify-end': isCurrentUser }"
+        :style="isCurrentUser ? '' : 'padding-left:45px'"
+      >
         <li v-for="(reaction, key) in Object.values(message.reactions)" :key="key">
           <Tag value="test" class="bg-slate-300 px-2 py-1" rounded>
             <span v-if="key > 1">{{ key }}</span>
@@ -224,9 +221,13 @@ function closeReactionsButtons(updatedMessage: Message) {
         </li>
       </ul>
     </div>
-    <div v-if="seenProfilPicsList.length > 0" class="pt-2">
+    <div
+      v-if="seenList.length > 0"
+      class="pt-2"
+      :style="isCurrentUser ? '' : 'padding-left:45px'"
+    >
       <ul class="flex" :class="isCurrentUser ? 'justify-end' : ''">
-        <li v-for="profilePic of seenProfilPicsList" :key="profilePic">
+        <li v-for="profilePic of seenList" :key="profilePic">
           <img
             class="w-6 h-6 mb-3 rounded-full shadow-lg me-3"
             :src="'https://source.unsplash.com/' + profilePic + '/100x100'"

@@ -8,18 +8,17 @@ import useConversationStore from '@/store/conversationStore'
 import useSocketStore from '@/store/socketStore'
 import type { MessageBody } from '@/models/messageBody'
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
-import ScrollPanel from "primevue/scrollpanel";
+import ScrollPanel from 'primevue/scrollpanel'
+import useUserStore from '@/store/userStore'
 
+const userStore = useUserStore()
 const conversationStore = useConversationStore()
 const socketStore = useSocketStore()
 
 const messageContent = ref('')
 const messageReplied = ref<Message | null>(null)
 
-onMounted(() => {
-
-})
-
+onMounted(() => {})
 
 function closeConversation() {
   conversationStore.showConversation = false
@@ -61,9 +60,12 @@ function sendMessage() {
     .then((response) => {
       const createdMessage: Message = response.data.message
       if (createdMessage) {
-        conversationStore.addMessageToConversation(conversationStore.getSelectedConversation()._id,createdMessage)
+        conversationStore.addMessageToConversation(
+          conversationStore.getSelectedConversation()._id,
+          createdMessage
+        )
       }
-      conversationStore.addSeenToConversation(conversationStore.getSelectedConversation()._id, createdMessage._id)
+      conversationStore.addSeenToConversation(createdMessage._id)
       messageContent.value = ''
       messageReplied.value = null
     })
@@ -72,6 +74,17 @@ function sendMessage() {
 
 function deleteReply(): void {
   messageReplied.value = null
+}
+
+function getMessageSeenList(messageId: string): string[] {
+  const userIds: string[] = conversationStore
+    .getSeenListByMessageId(messageId)
+    .filter((userId) => userId !== userStore.getConnectedUser()?._id)
+  const profilPics = []
+  userIds.forEach((userId) => {
+    profilPics.push(userStore.getUserProfilPicIdById(userId))
+  })
+  return profilPics
 }
 </script>
 <template>
@@ -93,15 +106,16 @@ function deleteReply(): void {
       </button>
     </div>
     <div class="pt-5"></div>
-      <ScrollPanel style="height: 75%">
-    <MessageItemVue
-      v-for="message in getMessages()"
-      :key="message._id"
-      :message="message"
-      @replyToMessage="replyToMessage($event)"
-    ></MessageItemVue>
-      </ScrollPanel>
-    <div class="bg-white p-4 shadow-md rounded-lg flex bottom-0 mt-5 fixed" style="width:64%">
+    <ScrollPanel style="height: 75%">
+      <MessageItemVue
+        v-for="message in getMessages()"
+        :key="message._id"
+        :message="message"
+        :seenList="getMessageSeenList(message._id)"
+        @replyToMessage="replyToMessage($event)"
+      ></MessageItemVue>
+    </ScrollPanel>
+    <div class="bg-white p-4 shadow-md rounded-lg flex bottom-0 mt-5 fixed" style="width: 64%">
       <div class="flex flex-col w-full">
         <div v-if="messageReplied">
           <span style="background: deepskyblue">Replying to: {{ messageReplied.content }}</span>
