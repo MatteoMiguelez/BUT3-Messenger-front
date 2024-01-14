@@ -213,7 +213,7 @@ function closeReactionsButtons(updatedMessage: Message) {
         :class="{ 'justify-end': isCurrentUser }"
         :style="isCurrentUser ? '' : 'padding-left:45px'"
       >
-        <li v-for="(reaction, key) in Object.values(message.reactions)" :key="key">
+        <li v-for="(reaction, key) in Object.values(messageItem.reactions)" :key="key">
           <Tag value="test" class="bg-slate-300 px-2 py-1" rounded>
             <span v-if="key > 1">{{ key }}</span>
             {{ getReactionAsEmoji(reaction) }}
