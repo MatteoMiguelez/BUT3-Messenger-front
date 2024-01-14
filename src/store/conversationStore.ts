@@ -3,7 +3,10 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import axios from 'axios'
 import router from '@/router'
-import type { Message } from '@/models/message'
+import type { Message, Reactions } from '@/models/message'
+import { REACTION_EMOJI_MAP } from '@/models/message'
+import type { Reaction } from '@/models/reaction'
+
 
 const useConversationStore = defineStore('conversationStore', () => {
   const conversationList = ref<Conversation[]>([])
@@ -17,6 +20,20 @@ const useConversationStore = defineStore('conversationStore', () => {
 
   function getSelectedConversation(): Conversation {
     return <Conversation>selectedConversation.value
+  }
+
+  function addReactionToMessage(convId: string, message: Message): void {
+    setMessageById(convId, message)
+  }
+
+  function setMessageById(convId: string, message: Message) {
+    const conversation = getConversationById(convId)
+    if (conversation) {
+      const messageIndex = conversation.messages.findIndex((msg: Message) => msg._id === message._id)
+      if (messageIndex !== -1) {
+        conversation.messages[messageIndex] = message
+      }
+    }
   }
   async function createConversation(usersId: string[]): Promise<void> {
     await axios
@@ -101,9 +118,20 @@ const useConversationStore = defineStore('conversationStore', () => {
     return false
   }
 
-  function addMessageToConversation(message: Message): void {
+  function addMessageToConversation(convId: string,message: Message): void {
     if(messageExistInConversation(message.conversationId, message._id)) return
-    getSelectedConversation().messages.push(message)
+    const conversation = getConversationById(convId);
+    if(conversation) {
+      conversation.messages.push(message)
+    }
+  }
+
+  function getConversationById(id: string): Conversation| null {
+    const conversation: Conversation[] | undefined = conversationList.value.filter((conversation: Conversation) => conversation._id === id)
+    if (conversation){
+      return conversation[0] ?? null
+    }
+    return null
   }
   function deleteMessageInConv( msgId: string): void {
     const conversation = getSelectedConversation()
@@ -172,6 +200,25 @@ const useConversationStore = defineStore('conversationStore', () => {
     return matchingUserIds
   }
 
+  function setExistingReactionList(reactions: Reactions,react: Reaction[]) {
+    for (const reactionName of Object.values(reactions)) {
+      const existingReaction = react.find((reaction) => reaction.name === reactionName)
+
+      if (existingReaction) {
+        existingReaction.number++
+      } else {
+        const emoji = REACTION_EMOJI_MAP[reactionName] || ''
+        const newReaction: Reaction = {
+          name: reactionName,
+          emoji,
+          number: 1
+        }
+
+        react.push(newReaction)
+      }
+    }
+  }
+
   function getConversations(): Conversation[] {
     return conversationList.value
   }
@@ -202,7 +249,9 @@ const useConversationStore = defineStore('conversationStore', () => {
     editMessage,
     getMessageById,
     addSeenToConversation,
-    userListOfSeenForMessage
+    addReactionToMessage,
+    userListOfSeenForMessage,
+    setExistingReactionList
   }
 })
 

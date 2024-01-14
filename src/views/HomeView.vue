@@ -8,6 +8,7 @@ import useUserStore from '@/store/userStore'
 import useConversationStore from '@/store/conversationStore'
 import router from '@/router'
 import useSocketStore from '@/store/socketStore'
+import type { Message } from '@/models/message'
 
 const userStore = useUserStore()
 const socketStore = useSocketStore()
@@ -18,7 +19,27 @@ onMounted(async () => {
   await conversationStore.fetchConversations()
   socketStore.watchNewConversation(handleNewConversationSocket)
   socketStore.watchConversationDeleted(handleConversationDeletedSocket)
+  socketStore.watchNewMessage(handleNewMessageSocket)
+  socketStore.watchMessageDeleted(handleMessageDeleted)
+  socketStore.watchMessageEdited(handleMessageEdited)
+  socketStore.watchNewReact(handleNewReact)
 })
+
+
+
+function handleNewMessageSocket(convId: string, message: Message) {
+  conversationStore.addMessageToConversation(convId,message)
+}
+
+function handleNewReact(conversationId: string, message: Message) {
+  conversationStore.addReactionToMessage(conversationId, message)
+}
+function handleMessageDeleted(messId: string, message: Message) {
+  conversationStore.deleteMessageInConv(messId)
+}
+function handleMessageEdited(messId: string, message: Message) {
+  conversationStore.editMessage(messId, message)
+}
 
 function getSelectedConversation(): Conversation {
   return conversationStore.getSelectedConversation()

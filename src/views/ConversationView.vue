@@ -16,20 +16,10 @@ const messageContent = ref('')
 const messageReplied = ref<Message | null>(null)
 
 onMounted(() => {
-  socketStore.watchNewMessage(handleNewMessageSocket)
-  socketStore.watchMessageDeleted(handleMessageDeleted)
-  socketStore.watchMessageEdited(handleMessageEdited)
+
 })
 
-function handleNewMessageSocket(convId: string, message: Message) {
-  conversationStore.addMessageToConversation(message)
-}
-function handleMessageDeleted(messId: string, message: Message) {
-  conversationStore.deleteMessageInConv(messId)
-}
-function handleMessageEdited(messId: string, message: Message) {
-  conversationStore.editMessage(messId, message)
-}
+
 function closeConversation() {
   conversationStore.showConversation = false
 }
@@ -69,7 +59,7 @@ function sendMessage() {
     .then((response) => {
       const createdMessage: Message = response.data.message
       if (createdMessage) {
-        conversationStore.addMessageToConversation(createdMessage)
+        conversationStore.addMessageToConversation(conversationStore.getSelectedConversation()._id,createdMessage)
       }
       messageContent.value = ''
       messageReplied.value = null

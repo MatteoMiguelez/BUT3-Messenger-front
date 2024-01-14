@@ -2,14 +2,20 @@
 import type { Conversation } from '@/models/conversation'
 import useConversationStore from '@/store/conversationStore'
 import Card from 'primevue/card'
+import useUserStore from '@/store/userStore'
 
 const props = defineProps<{
   conversation: Conversation
 }>()
 
+const userStore = useUserStore()
 const conversationStore = useConversationStore()
 function openConv(conversation: Conversation) {
   conversationStore.openConversation(conversation)
+}
+
+function getUsername(id: string): string | null {
+  return userStore.getUserNameById(id)
 }
 
 function dateToString(date: Date) {
@@ -33,6 +39,7 @@ function dateToString(date: Date) {
         <div class="flex flex-col">
           <span class="font-semibold">{{ conversation.title }}</span>
           <span class="text-sm italic">{{ dateToString(props.conversation.lastUpdate) }}</span>
+          <span class="text-sm italic">{{ getUsername(conversation.messages[conversation.messages.length-1].from)}}: {{ conversation.messages[conversation.messages.length-1].content}}</span>
         </div>
       </div>
     </template>

@@ -29,6 +29,7 @@ const useMessageStore = defineStore('messageStore', () => {
     return message[0] ?? null
   }
 
+
   return {
     setMessages,
     addMessage,

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Message } from '@/models/message'
+import { ALL_REACTIONS, type Message } from '@/models/message'
 import axios from 'axios'
 import { computed, onMounted, ref } from 'vue'
 import useConversationStore from '@/store/conversationStore'
@@ -30,7 +30,9 @@ const reactions = ref<Reaction[]>([])
 const seenProfilPicsList = ref<string[]>([])
 
 const op = ref()
-
+function getReactionAsEmoji(value : typeof ALL_REACTIONS): string{
+  return REACTION_EMOJI_MAP[value];
+}
 const isCurrentUser = computed(() => {
   return messageItem.value.from === userStore.getConnectedUser()?._id
 })
@@ -68,22 +70,7 @@ onMounted(() => {
 })
 
 function setExistingReactionList() {
-  for (const reactionName of Object.values(messageItem.value.reactions)) {
-    const existingReaction = reactions.value.find((reaction) => reaction.name === reactionName)
-
-    if (existingReaction) {
-      existingReaction.number++
-    } else {
-      const emoji = REACTION_EMOJI_MAP[reactionName] || ''
-      const newReaction: Reaction = {
-        name: reactionName,
-        emoji,
-        number: 1
-      }
-
-      reactions.value.push(newReaction)
-    }
-  }
+  conversationStore.setExistingReactionList(messageItem.value.reactions, reactions.value )
 }
 
 function reply(): void {
@@ -221,10 +208,10 @@ function closeReactionsButtons(updatedMessage: Message) {
     </div>
     <div>
       <ul class="flex" :class="{ 'justify-end': isCurrentUser }">
-        <li v-for="reaction in reactions" v-bind:key="reaction.name">
+        <li v-for="(reaction, key) in Object.values(message.reactions)" :key="key">
           <Tag value="test" class="bg-slate-300 px-2 py-1" rounded>
-            <span v-if="reaction.number > 1">{{ reaction.number }}</span>
-            {{ reaction.emoji }}
+            <span v-if="key > 1">{{ key }}</span>
+            {{ getReactionAsEmoji(reaction) }}
           </Tag>
         </li>
       </ul>
