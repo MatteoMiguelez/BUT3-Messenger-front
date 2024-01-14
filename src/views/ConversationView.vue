@@ -37,6 +37,7 @@ function getMessages(): Message[] {
 
 function replyToMessage(message: Message): void {
   messageReplied.value = message
+  conversationStore.editMessage(message._id, message)
 }
 
 function sendMessage() {
