@@ -126,23 +126,31 @@ function closeReactionsButtons(updatedMessage: Message) {
 }
 </script>
 <template>
-  <div class="pt-1 pb-1">
+  <div class="pt-1 pb-1" :class="isCurrentUser ? 'pe-5' : ''">
     <div class="flex flex-col">
       <div
         v-if="messageItem.edited && !messageItem.deleted"
-        class="flex text-xs"
+        class="flex text-xs italic text-slate-500"
         :class="isCurrentUser ? 'justify-end' : ''"
+        :style="isCurrentUser ? '': 'padding-left:45px'"
       >
         Edited
       </div>
       <div
         v-if="messageItem.replyTo"
-        class="flex text-xs"
-        :class="isCurrentUser ? 'justify-end' : ''"
+        class="flex text-xs flex-col"
+        :class="isCurrentUser ? 'justify-end items-end' : ''"
+        :style="isCurrentUser ? '': 'padding-left:45px'"
       >
-        <FontAwesomeIcon :icon="['fas', 'reply']" class="pe-1 pt-1" />
-        {{ usernameOfRespondedMessage }} a répondu à {{ usernameReplyTo }} :
-        {{ repliedMessageContent }}
+        <div>
+          <FontAwesomeIcon :icon="['fas', 'reply']" class="pe-1 pt-1" />
+          {{ usernameOfRespondedMessage }} a répondu à {{ usernameReplyTo }}
+        </div>
+          <div>
+            <p class="w-fit	py-1 px-2 rounded-lg bg-cyan-200">
+          {{ repliedMessageContent }}
+        </p>
+          </div>
       </div>
       <div
         v-if="edition"
@@ -207,7 +215,7 @@ function closeReactionsButtons(updatedMessage: Message) {
       </div>
     </div>
     <div>
-      <ul class="flex" :class="{ 'justify-end': isCurrentUser }">
+      <ul class="flex" :class="{ 'justify-end': isCurrentUser }" :style="isCurrentUser ? '': 'padding-left:45px'">
         <li v-for="(reaction, key) in Object.values(message.reactions)" :key="key">
           <Tag value="test" class="bg-slate-300 px-2 py-1" rounded>
             <span v-if="key > 1">{{ key }}</span>

@@ -74,7 +74,7 @@ async function handleConnectedUser() {
         <div class="bg-white p-4 shadow-md rounded-lg">
           <div class="flex items-center">
             <img
-              :src="`https://source.unsplash.com/${ userStore.getConnectedUser()?._id }/100x100`"
+              :src="`https://source.unsplash.com/${userStore.getConnectedUser()?._id}/100x100`"
               alt="User Image"
               class="w-12 h-12 rounded-full mr-4"
             />
@@ -83,14 +83,14 @@ async function handleConnectedUser() {
               <span class="text-green-500">Online</span>
             </div>
           </div>
-        </div>
-        <div class="flex flex-col">
-          <h1 class="pt-4 pb-2 text-xl font-bold">Conversations</h1>
-          <ConversationItemView
-            v-for="conversation in conversationStore.getConversations()"
-            :key="conversation._id"
-            :conversation="conversation"
-          ></ConversationItemView>
+          <div class="flex flex-col">
+            <h1 class="pt-5 pb-2 ps-5 text-xl font-bold">Conversations</h1>
+            <ConversationItemView
+              v-for="conversation in conversationStore.getConversations()"
+              :key="conversation._id"
+              :conversation="conversation"
+            ></ConversationItemView>
+          </div>
         </div>
       </div>
 

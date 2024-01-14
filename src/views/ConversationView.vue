@@ -7,7 +7,8 @@ import type { Message } from '@/models/message'
 import useConversationStore from '@/store/conversationStore'
 import useSocketStore from '@/store/socketStore'
 import type { MessageBody } from '@/models/messageBody'
-import {FontAwesomeIcon} from "@fortawesome/vue-fontawesome";
+import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
+import ScrollPanel from "primevue/scrollpanel";
 
 const conversationStore = useConversationStore()
 const socketStore = useSocketStore()
@@ -62,6 +63,7 @@ function sendMessage() {
       if (createdMessage) {
         conversationStore.addMessageToConversation(conversationStore.getSelectedConversation()._id,createdMessage)
       }
+      conversationStore.addSeenToConversation(conversationStore.getSelectedConversation()._id, createdMessage._id)
       messageContent.value = ''
       messageReplied.value = null
     })
@@ -75,29 +77,31 @@ function deleteReply(): void {
 <template>
   <div class="relative flex flex-col h-full p-4">
     <h2 class="text-3xl">{{ getConversation().title }}</h2>
+    <p>{{ getConversation().participants.length }} participants</p>
     <div>
       <button
         @click="deleteConversation"
-        class="absolute w-9 h-9 top-2 right-14 bg-red-600 hover:bg-red-700 p-2 rounded-full"
+        class="absolute w-9 h-9 top-2 right-14 bg-red-600 hover:bg-red-700 p-2 rounded-full flex justify-center items-center"
       >
-          <FontAwesomeIcon :icon="['fas', 'trash']" />
+        <FontAwesomeIcon :icon="['fas', 'trash']" />
       </button>
       <button
         @click="closeConversation"
-        class="absolute w-9 h-9 top-2 right-2 bg-gray-200 hover:bg-gray-300 p-2 rounded-full"
+        class="absolute w-9 h-9 top-2 right-2 bg-gray-200 hover:bg-gray-300 p-2 rounded-full flex justify-center items-center"
       >
-          <FontAwesomeIcon :icon="['fas', 'xmark']" />
+        <FontAwesomeIcon :icon="['fas', 'xmark']" />
       </button>
     </div>
     <div class="pt-5"></div>
+      <ScrollPanel style="height: 75%">
     <MessageItemVue
       v-for="message in getMessages()"
       :key="message._id"
       :message="message"
       @replyToMessage="replyToMessage($event)"
     ></MessageItemVue>
-
-    <div class="bg-white p-4 shadow-md rounded-lg flex relative bottom-0 mt-5">
+      </ScrollPanel>
+    <div class="bg-white p-4 shadow-md rounded-lg flex bottom-0 mt-5 fixed" style="width:64%">
       <div class="flex flex-col w-full">
         <div v-if="messageReplied">
           <span style="background: deepskyblue">Replying to: {{ messageReplied.content }}</span>

@@ -3,12 +3,17 @@ import type { Conversation } from '@/models/conversation'
 import useConversationStore from '@/store/conversationStore'
 import Card from 'primevue/card'
 import useUserStore from '@/store/userStore'
+import {computed} from "vue";
 
 const props = defineProps<{
   conversation: Conversation
 }>()
 
 const userStore = useUserStore()
+const isCurrentConversation = computed<boolean>(() => {
+    return conversationStore.getSelectedConversation() ? conversationStore.getSelectedConversation()._id === props.conversation._id : false
+})
+
 const conversationStore = useConversationStore()
 function openConv(conversation: Conversation) {
   conversationStore.openConversation(conversation)
@@ -28,6 +33,11 @@ function dateToString(date: Date) {
     <template #content>
       <div
         class="flex py-2 px-5 pt-5 cursor-pointer bg-white"
+        :class="
+            isCurrentConversation
+            ? 'bg-slate-100 rounded-lg'
+            : ''
+        "
         @click="openConv(props.conversation)"
       >
         <img

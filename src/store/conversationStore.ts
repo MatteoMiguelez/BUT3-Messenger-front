@@ -13,7 +13,6 @@ const useConversationStore = defineStore('conversationStore', () => {
   const showConversation = ref<boolean>(false)
   const selectedConversation = ref<Conversation>()
 
-
   function setSelectedConversation(conversation: Conversation): void {
     selectedConversation.value = conversation
   }
@@ -95,23 +94,27 @@ const useConversationStore = defineStore('conversationStore', () => {
   }
 
   function addConversation(conversation: Conversation): void {
-    if(conversationExist(conversation._id)) return
+    if (conversationExist(conversation._id)) return
     conversationList.value.push(conversation)
   }
 
   function deleteConversation(id: string): void {
-    const index : number = conversationList.value.findIndex((conversation : Conversation) : boolean => {
-      return conversation._id === id
-    })
+    const index: number = conversationList.value.findIndex(
+      (conversation: Conversation): boolean => {
+        return conversation._id === id
+      }
+    )
     if (index !== -1) {
       conversationList.value.splice(index, 1)
     }
   }
 
   function conversationExist(id: string): boolean {
-    const index : number = conversationList.value.findIndex((conversation : Conversation) : boolean => {
-      return conversation._id === id
-    })
+    const index: number = conversationList.value.findIndex(
+      (conversation: Conversation): boolean => {
+        return conversation._id === id
+      }
+    )
     if (index !== -1) {
       return true
     }
@@ -224,8 +227,10 @@ const useConversationStore = defineStore('conversationStore', () => {
   }
 
   function getMessageById(id: string): Message | null {
-    const message: Message[] | undefined = selectedConversation.value?.messages.filter((message: Message) => message._id === id)
-    if (message){
+    const message: Message[] | undefined = selectedConversation.value?.messages.filter(
+      (message: Message) => message._id === id
+    )
+    if (message) {
       return message[0] ?? null
     }
     return null
